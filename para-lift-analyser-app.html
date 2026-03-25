@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>BWL Para Lift Analyser</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap");
+:root {
+  --navy: #0a1628; --navy-mid: #122040; --gold: #c9a84c; --gold-bright: #f0c040;
+  --gold-dim: #7a6030; --white: #f4f6fa; --grey: #8a9ab8; --grey-light: #c8d4e8;
+  --green: #2ecc7a; --amber: #f0a830; --red: #e84040;
+  --card: rgba(255,255,255,0.04); --card-border: rgba(201,168,76,0.2); --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--navy); color: var(--white); font-family: "Barlow", sans-serif; min-height: 100vh; overflow-x: hidden; }
+body::before { content: ""; position: fixed; inset: 0; background: radial-gradient(ellipse 80% 50% at 20% 0%, rgba(201,168,76,0.07) 0%, transparent 60%); pointer-events: none; z-index: 0; }
+.app { position: relative; z-index: 1; max-width: 600px; margin: 0 auto; padding: 0 16px 80px; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 20px 0 18px; border-bottom: 1px solid var(--card-border); margin-bottom: 24px; }
+.logo-block { display: flex; align-items: center; gap: 12px; }
+.logo-mark { width: 40px; height: 40px; background: var(--gold); clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; align-items: center; justify-content: center; font-family: "Barlow Condensed", sans-serif; font-weight: 900; font-size: 12px; color: var(--navy); flex-shrink: 0; }
+.logo-text .org { font-family: "Barlow Condensed", sans-serif; font-size: 10px; font-weight: 600; letter-spacing: 2.5px; color: var(--gold); text-transform: uppercase; }
+.logo-text .tool { font-family: "Barlow Condensed", sans-serif; font-size: 20px; font-weight: 700; color: var(--white); text-transform: uppercase; }
+.conn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--grey); transition: background 0.3s; }
+.conn-dot.online { background: var(--green); } .conn-dot.offline { background: var(--red); }
+.section-title { font-family: "Barlow Condensed", sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.ctx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.ctx-field { display: flex; flex-direction: column; gap: 5px; }
+.ctx-field label { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); }
+.ctx-field select, .ctx-field input { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; color: var(--white); font-family: "Barlow", sans-serif; font-size: 15px; font-weight: 500; padding: 11px 13px; outline: none; -webkit-appearance: none; transition: border-color 0.2s; }
+.ctx-field select:focus, .ctx-field input:focus { border-color: var(--gold); }
+.ctx-field select option { background: var(--navy-mid); }
+.upload-zone { border: 2px dashed var(--card-border); border-radius: var(--radius); padding: 36px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--card); position: relative; margin-bottom: 16px; }
+.upload-zone.has-file { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+.upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.upload-icon { font-size: 44px; margin-bottom: 10px; line-height: 1; }
+.upload-zone h3 { font-family: "Barlow Condensed", sans-serif; font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 5px; }
+.upload-zone p { font-size: 13px; color: var(--grey); margin-bottom: 14px; }
+.fmts { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.fmt { font-size: 10px; font-weight: 600; letter-spacing: 1px; padding: 3px 8px; border-radius: 4px; background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid var(--gold-dim); text-transform: uppercase; }
+.file-row { display: none; align-items: center; gap: 12px; background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; }
+.file-row.visible { display: flex; }
+.file-icon { font-size: 28px; flex-shrink: 0; }
+.file-info { flex: 1; min-width: 0; }
+.file-name { font-size: 14px; font-weight: 600; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-size { font-size: 12px; color: var(--grey); }
+.file-clear { background: none; border: none; color: var(--grey); font-size: 20px; cursor: pointer; padding: 4px; flex-shrink: 0; }
+.vid-preview { display: none; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--card-border); margin-bottom: 16px; background: #000; }
+.vid-preview.visible { display: block; }
+#videoEl { width: 100%; max-height: 280px; object-fit: contain; display: block; background: #000; }
+.notes-card { background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px; margin-bottom: 20px; }
+.notes-card textarea { width: 100%; background: transparent; border: none; color: var(--white); font-family: "Barlow", sans-serif; font-size: 14px; line-height: 1.6; resize: none; outline: none; min-height: 70px; }
+.notes-card textarea::placeholder { color: var(--grey); }
+.analyse-btn { width: 100%; padding: 18px; background: var(--gold); border: none; border-radius: var(--radius); font-family: "Barlow Condensed", sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--navy); cursor: pointer; transition: all 0.2s; margin-bottom: 20px; position: relative; overflow: hidden; }
+.analyse-btn:active:not(:disabled) { transform: scale(0.98); }
+.analyse-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.shimmer { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%); transform: translateX(-100%); animation: shimmer 1.4s infinite; display: none; }
+.analyse-btn.loading .shimmer { display: block; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+.error-box { display: none; background: rgba(232,64,64,0.1); border: 1px solid rgba(232,64,64,0.3); border-radius: 10px; padding: 14px 16px; font-size: 13px; color: #ff8888; margin-bottom: 16px; line-height: 1.5; }
+.error-box.visible { display: block; }
+.loading-panel { display: none; text-align: center; padding: 36px 20px; background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); margin-bottom: 20px; }
+.loading-panel.visible { display: block; }
+.spinner { width: 48px; height: 48px; border: 3px solid rgba(201,168,76,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-panel h3 { font-family: "Barlow Condensed", sans-serif; font-size: 22px; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+.loading-panel p { font-size: 13px; color: var(--grey); }
+.lsteps { display: flex; flex-direction: column; gap: 6px; margin-top: 18px; text-align: left; }
+.lstep { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--grey); padding: 8px 12px; border-radius: 8px; transition: all 0.3s; }
+.lstep.active { color: var(--gold); background: rgba(201,168,76,0.06); }
+.lstep.done { color: var(--green); }
+.results { display: none; }
+.results.visible { display: block; }
+.results-header { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--card-border); }
+.results-header h2 { font-family: "Barlow Condensed", sans-serif; font-size: 26px; font-weight: 700; color: var(--white); margin-bottom: 3px; }
+.results-header h2 span { color: var(--gold); }
+.results-meta { font-size: 12px; color: var(--grey); }
+.score-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 14px; }
+.score-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 12px 8px; text-align: center; }
+.score-lbl { font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--grey); margin-bottom: 6px; }
+.score-val { font-family: "Barlow Condensed", sans-serif; font-size: 32px; font-weight: 900; line-height: 1; margin-bottom: 2px; }
+.score-val.green { color: var(--green); } .score-val.amber { color: var(--amber); } .score-val.red { color: var(--red); }
+.score-sub { font-size: 9px; color: var(--grey); }
+.vel-card { background: var(--navy-mid); border: 1px solid var(--gold-dim); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 14px; display: flex; align-items: center; gap: 14px; }
+.vel-icon { font-size: 30px; flex-shrink: 0; }
+.vel-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
+.vel-num { display: flex; align-items: baseline; gap: 5px; }
+.vel-val { font-family: "Barlow Condensed", sans-serif; font-size: 40px; font-weight: 900; color: var(--gold); line-height: 1; }
+.vel-unit { font-size: 14px; color: var(--grey); }
+.vel-note { font-size: 12px; color: var(--grey); line-height: 1.4; margin-top: 2px; }
+.verdict { border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 12px; }
+.verdict.green { background: rgba(46,204,122,0.08); border: 1px solid rgba(46,204,122,0.25); }
+.verdict.amber { background: rgba(240,168,48,0.08); border: 1px solid rgba(240,168,48,0.25); }
+.verdict.red { background: rgba(232,64,64,0.08); border: 1px solid rgba(232,64,64,0.25); }
+.verdict-icon { font-size: 26px; flex-shrink: 0; }
+.verdict h3 { font-family: "Barlow Condensed", sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.verdict.green h3 { color: var(--green); } .verdict.amber h3 { color: var(--amber); } .verdict.red h3 { color: var(--red); }
+.verdict p { font-size: 13px; color: var(--grey-light); line-height: 1.5; }
+.rep-card { background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px; }
+.rep-card h4 { font-family: "Barlow Condensed", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.rep-bars { display: flex; gap: 8px; align-items: flex-end; }
+.rep-block { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+.rep-bar-wrap { height: 50px; width: 100%; background: rgba(255,255,255,0.05); border-radius: 4px; display: flex; align-items: flex-end; overflow: hidden; }
+.rep-bar { width: 100%; border-radius: 4px 4px 0 0; }
+.rep-bar.green { background: var(--green); } .rep-bar.amber { background: var(--amber); } .rep-bar.red { background: var(--red); }
+.rep-num { font-size: 10px; font-weight: 600; color: var(--grey); }
+.rep-lbl { font-size: 9px; color: var(--grey); }
+.a-card { background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.a-card h4 { font-family: "Barlow Condensed", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.finding { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; line-height: 1.5; }
+.finding:last-child { border-bottom: none; padding-bottom: 0; }
+.fdot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.fdot.green { background: var(--green); } .fdot.amber { background: var(--amber); } .fdot.red { background: var(--red); }
+.ftext { color: var(--grey-light); }
+.ftext strong { color: var(--white); font-weight: 600; }
+.cues-card { background: var(--navy-mid); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+.cues-card h4 { font-family: "Barlow Condensed", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.cue { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.cue:last-child { border-bottom: none; padding-bottom: 0; }
+.cue-num { font-family: "Barlow Condensed", sans-serif; font-size: 24px; font-weight: 900; color: var(--gold); line-height: 1; flex-shrink: 0; width: 24px; }
+.cue-text { font-size: 14px; font-weight: 600; color: var(--white); line-height: 1.4; }
+.next-card { background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px; }
+.next-card h4 { font-family: "Barlow Condensed", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+.next-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; color: var(--grey-light); line-height: 1.5; }
+.next-item:last-child { border-bottom: none; padding-bottom: 0; }
+.narrow { color: var(--gold); font-weight: 700; flex-shrink: 0; }
+.act-row { display: flex; gap: 10px; margin-bottom: 24px; }
+.act-btn { flex: 1; padding: 14px 10px; border-radius: var(--radius); font-family: "Barlow Condensed", sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; border: 1px solid var(--card-border); }
+.act-btn.primary { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+.act-btn.secondary { background: transparent; color: var(--grey-light); }
+.act-btn:active { transform: scale(0.97); }
+.mode-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; margin-bottom: 20px; font-size: 12px; }
+.mode-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mode-dot.online { background: var(--green); }
+.mode-dot.offline { background: var(--red); }
+.mode-dot.checking { background: var(--amber); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.4;} }
+.mode-text { color: var(--grey-light); flex: 1; }
+.mode-text strong { color: var(--white); }
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo-block">
+    <div class="logo-mark">BWL</div>
+    <div class="logo-text">
+      <div class="org">British Weightlifting</div>
+      <div class="tool">Para Lift Analyser</div>
+    </div>
+  </div>
+  <div class="conn-dot" id="connDot"></div>
+</header>
+<div class="mode-bar">
+  <div class="mode-dot checking" id="modeDot"></div>
+  <div class="mode-text" id="modeText">Connecting to analysis server...</div>
+</div>
+<div class="section-title">Session Setup</div>
+<div class="ctx-grid">
+  <div class="ctx-field">
+    <label>Athlete</label>
+    <select id="athlete">
+      <option value="">Select...</option>
+      <option>Matthew Harding</option>
+      <option>Olivia Broome</option>
+      <option>Louise Sugden</option>
+      <option>Other</option>
+    </select>
+  </div>
+  <div class="ctx-field">
+    <label>Session</label>
+    <select id="sessionType">
+      <option>Competition Prep</option>
+      <option>Max Strength</option>
+      <option>Technique Focus</option>
+      <option>Volume Block</option>
+      <option>Physical Testing</option>
+    </select>
+  </div>
+  <div class="ctx-field">
+    <label>Load / Attempt</label>
+    <input type="text" id="load" placeholder="e.g. 120kg @ 85%">
+  </div>
+  <div class="ctx-field">
+    <label>Camera Angle</label>
+    <select id="angle">
+      <option>Side-on</option>
+      <option>Front</option>
+      <option>Rear</option>
+      <option>Overhead</option>
+    </select>
+  </div>
+</div>
+<div class="section-title">Video Upload</div>
+<div class="upload-zone" id="uploadZone">
+  <input type="file" id="videoInput" accept="video/*" capture="environment" onchange="handleFile(event)">
+  <div class="upload-icon">&#127909;</div>
+  <h3>Film or upload a lift</h3>
+  <p>Record directly or upload from your camera roll. Side-on gives best velocity data.</p>
+  <div class="fmts">
+    <span class="fmt">MP4</span>
+    <span class="fmt">MOV</span>
+    <span class="fmt">Live Record</span>
+  </div>
+</div>
+<div class="file-row" id="fileRow">
+  <div class="file-icon">&#127916;</div>
+  <div class="file-info">
+    <div class="file-name" id="fileName">-</div>
+    <div class="file-size" id="fileSize">-</div>
+  </div>
+  <button class="file-clear" onclick="clearFile()">x</button>
+</div>
+<div class="vid-preview" id="vidPreview">
+  <video id="videoEl" controls playsinline></video>
+</div>
+<div class="section-title">Coach Notes</div>
+<div class="notes-card">
+  <textarea id="notes" placeholder="Add context - e.g. left shoulder issue, first session back from injury, working on grip width..." rows="3"></textarea>
+</div>
+<div class="error-box" id="errorBox"></div>
+<button class="analyse-btn" id="analyseBtn" onclick="runAnalysis()" disabled>
+  <div class="shimmer"></div>
+  <span id="btnLabel">Upload a Video First</span>
+</button>
+<div class="loading-panel" id="loadingPanel">
+  <div class="spinner"></div>
+  <h3>Analysing Lift...</h3>
+  <p>Extracting frames and running biomechanical analysis</p>
+  <div class="lsteps">
+    <div class="lstep" id="s1">&#127916; Uploading video to server</div>
+    <div class="lstep" id="s2">&#128208; Extracting frames from concentric phase</div>
+    <div class="lstep" id="s3">&#9889; Calculating concentric velocity</div>
+    <div class="lstep" id="s4">&#129504; Generating biomechanical feedback</div>
+  </div>
+</div>
+<div class="results" id="results">
+  <div class="results-header">
+    <h2>Analysis - <span id="rAthlete"></span></h2>
+    <div class="results-meta" id="rMeta"></div>
+  </div>
+  <div class="score-row" id="scoreRow"></div>
+  <div class="vel-card">
+    <div class="vel-icon">&#9889;</div>
+    <div>
+      <div class="vel-label">Concentric Average Velocity</div>
+      <div class="vel-num">
+        <div class="vel-val" id="velVal">-</div>
+        <div class="vel-unit">m/s</div>
+      </div>
+      <div class="vel-note" id="velNote"></div>
+    </div>
+  </div>
+  <div id="verdictEl"></div>
+  <div class="rep-card">
+    <h4>Rep Quality Profile</h4>
+    <div class="rep-bars" id="repBars"></div>
+  </div>
+  <div id="analysisSections"></div>
+  <div class="cues-card">
+    <h4>Immediate Coaching Cues</h4>
+    <div id="cuesList"></div>
+  </div>
+  <div class="next-card">
+    <h4>Next Session Recommendations</h4>
+    <div id="nextList"></div>
+  </div>
+  <div class="act-row">
+    <button class="act-btn primary" onclick="shareResults()">Share / Save</button>
+    <button class="act-btn secondary" onclick="newAnalysis()">New Analysis</button>
+  </div>
+</div>
+</div>
+<script>
+const BACKEND = "https://para-lift-analyser-production.up.railway.app";
+let currentFile = null;
+let lastAnalysis = null;
+
+async function checkConn() {
+  try {
+    const r = await fetch(BACKEND+"/health",{signal:AbortSignal.timeout(5000)});
+    if(r.ok){setMode("online");return true;}
+  } catch(e){}
+  setMode("offline");
+  return false;
+}
+
+function setMode(m) {
+  const dot=document.getElementById("modeDot"),txt=document.getElementById("modeText"),cd=document.getElementById("connDot");
+  if(m==="online"){
+    dot.className="mode-dot online";
+    txt.innerHTML="<strong>Connected</strong> - analysis server ready";
+    cd.className="conn-dot online";
+  } else {
+    dot.className="mode-dot offline";
+    txt.innerHTML="<strong>Server offline</strong> - check your internet connection";
+    cd.className="conn-dot offline";
+  }
+}
+
+function handleFile(evt) {
+  const f=evt.target.files[0];
+  if(!f)return;
+  currentFile=f;
+  document.getElementById("fileName").textContent=f.name;
+  document.getElementById("fileSize").textContent=fmtBytes(f.size);
+  document.getElementById("fileRow").classList.add("visible");
+  document.getElementById("uploadZone").classList.add("has-file");
+  const url=URL.createObjectURL(f);
+  document.getElementById("videoEl").src=url;
+  document.getElementById("vidPreview").classList.add("visible");
+  updateBtn();
+  hideErr();
+}
+
+function clearFile() {
+  currentFile=null;
+  document.getElementById("videoInput").value="";
+  document.getElementById("fileRow").classList.remove("visible");
+  document.getElementById("vidPreview").classList.remove("visible");
+  document.getElementById("uploadZone").classList.remove("has-file");
+  updateBtn();
+}
+
+function fmtBytes(b) {
+  if(b<1024)return b+" B";
+  if(b<1048576)return (b/1024).toFixed(1)+" KB";
+  return (b/1048576).toFixed(1)+" MB";
+}
+
+function updateBtn() {
+  const btn=document.getElementById("analyseBtn"),lbl=document.getElementById("btnLabel");
+  if(currentFile){btn.disabled=false;lbl.textContent="Analyse This Lift";}
+  else{btn.disabled=true;lbl.textContent="Upload a Video First";}
+}
+
+async function runAnalysis() {
+  if(!currentFile)return;
+  hideErr();
+  const athlete=document.getElementById("athlete").value||"Athlete";
+  const sessionType=document.getElementById("sessionType").value;
+  const load=document.getElementById("load").value||"Not specified";
+  const angle=document.getElementById("angle").value;
+  const notes=document.getElementById("notes").value;
+  document.getElementById("analyseBtn").disabled=true;
+  document.getElementById("analyseBtn").classList.add("loading");
+  document.getElementById("btnLabel").textContent="Analysing...";
+  document.getElementById("loadingPanel").classList.add("visible");
+  document.getElementById("results").classList.remove("visible");
+  animSteps();
+  try {
+    const fd=new FormData();
+    fd.append("video",currentFile);
+    fd.append("athlete",athlete);
+    fd.append("sessionType",sessionType);
+    fd.append("load",load);
+    fd.append("angle",angle);
+    fd.append("focusAreas","biomechanics,bar path,setup,consistency,bar speed,para-specific");
+    fd.append("coachNotes",notes);
+    const r=await fetch(BACKEND+"/api/analyze",{method:"POST",body:fd});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||"Server error "+r.status);}
+    const data=await r.json();
+    lastAnalysis={data,athlete,sessionType,load};
+    renderResults(data.data,data.metadata,athlete,sessionType,load);
+  } catch(err) {
+    showErr("Analysis failed: "+err.message);
+  } finally {
+    document.getElementById("loadingPanel").classList.remove("visible");
+    document.getElementById("analyseBtn").classList.remove("loading");
+    document.getElementById("analyseBtn").disabled=false;
+    document.getElementById("btnLabel").textContent="Analyse This Lift";
+  }
+}
+
+let si=null;
+function animSteps() {
+  const steps=["s1","s2","s3","s4"];
+  let i=0;
+  steps.forEach(s=>document.getElementById(s).className="lstep");
+  if(si)clearInterval(si);
+  si=setInterval(()=>{
+    if(i>0)document.getElementById(steps[i-1]).className="lstep done";
+    if(i<steps.length){document.getElementById(steps[i]).className="lstep active";i++;}
+    else clearInterval(si);
+  },1200);
+}
+
+function renderResults(d,meta,athlete,sessionType,load) {
+  document.getElementById("rAthlete").textContent=athlete;
+  document.getElementById("rMeta").textContent=sessionType+" - "+load+" - "+new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})+" - "+(meta&&meta.framesAnalyzed?meta.framesAnalyzed:10)+" frames";
+  const scores=[
+    {label:"Overall",val:d.overall_score,sub:"Quality"},
+    {label:"Technique",val:d.technique_score,sub:"Execution"},
+    {label:"Setup",val:d.setup_score,sub:"Position"},
+    {label:"Consistency",val:d.consistency_score,sub:"Reps"},
+  ];
+  document.getElementById("scoreRow").innerHTML=scores.map(s=>{
+    const c=s.val>=80?"green":s.val>=60?"amber":"red";
+    return "<div class='score-card'><div class='score-lbl'>"+s.label+"</div><div class='score-val "+c+"'>"+(s.val||"-")+"</div><div class='score-sub'>"+s.sub+"</div></div>";
+  }).join("");
+  const vel=d.bar_speed_estimate||"-";
+  document.getElementById("velVal").textContent=vel;
+  const vn=parseFloat(vel);
+  let vt="";
+  if(!isNaN(vn)){
+    if(vn>=0.8)vt="Excellent - high intent, strong power output";
+    else if(vn>=0.5)vt="Good - solid velocity for the load";
+    else if(vn>=0.3)vt="Moderate - consider intent cues or load reduction";
+    else vt="Slow - review load, fatigue, or intent";
+  }
+  document.getElementById("velNote").textContent=vt;
+  const icons={Green:"check",Amber:"warning",Attention:"alert",Red:"alert"};
+  const vcls={Green:"green",Amber:"amber",Attention:"red",Red:"red"};
+  const v=d.verdict||"Amber";
+  const vtxt=v==="Green"?"Good Lift":v==="Amber"?"Needs Attention":"Technical Issues";
+  const vico=v==="Green"?"[GOOD]":v==="Amber"?"[WARNING]":"[ALERT]";
+  document.getElementById("verdictEl").innerHTML="<div class='verdict "+(vcls[v]||"amber")+"'><div class='verdict-icon'>"+vico+"</div><div><h3>"+vtxt+"</h3><p>"+(d.summary||"")+"</p></div></div>";
+  const reps=d.rep_quality_profile||[d.overall_score];
+  document.getElementById("repBars").innerHTML=reps.map((r,i)=>{
+    const c=r>=80?"green":r>=60?"amber":"red";
+    const h=Math.round((r/100)*46);
+    return "<div class='rep-block'><div class='rep-bar-wrap'><div class='rep-bar "+c+"' style='height:"+h+"px'></div></div><div class='rep-num'>R"+(i+1)+"</div><div class='rep-lbl'>"+r+"</div></div>";
+  }).join("");
+  const sections=d.sections||buildSections(d);
+  document.getElementById("analysisSections").innerHTML=sections.map(s=>"<div class='a-card'><h4>"+(s.icon||"")+" "+s.title+"</h4>"+((s.findings||[]).map(f=>"<div class='finding'><div class='fdot "+f.type+"'></div><div class='ftext'>"+fmtFinding(f.text)+"</div></div>").join(""))+"</div>").join("");
+  const cues=d.immediate_coaching_cues||[];
+  document.getElementById("cuesList").innerHTML=cues.map((c,i)=>"<div class='cue'><div class='cue-num'>"+(i+1)+"</div><div class='cue-text'>"+c+"</div></div>").join("");
+  const next=d.next_session_recommendations||[];
+  document.getElementById("nextList").innerHTML=next.map(n=>"<div class='next-item'><span class='narrow'>to</span><span>"+n+"</span></div>").join("");
+  document.getElementById("results").classList.add("visible");
+  document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function buildSections(d) {
+  const s=[];
+  if(d.setup_and_position){s.push({title:"Setup and Position",icon:"",findings:[...(d.setup_and_position.strengths||[]).map(t=>({type:"green",text:t})),...(d.setup_and_position.improvements||[]).map(t=>({type:"amber",text:t}))]});}
+  if(d.bar_path_and_control){s.push({title:"Bar Path and Control",icon:"",findings:[...(d.bar_path_and_control.strengths||[]).map(t=>({type:"green",text:t})),...(d.bar_path_and_control.concerns||[]).map(t=>({type:"red",text:t}))]});}
+  if(d.power_output){s.push({title:"Power Output",icon:"",findings:[{type:"amber",text:d.power_output.assessment||""},{type:"amber",text:d.power_output.velocity_profile||""}].filter(f=>f.text)});}
+  if(d.para_specific_factors){s.push({title:"Para Specific Factors",icon:"",findings:[{type:"green",text:d.para_specific_factors.adaptations||""},{type:"amber",text:d.para_specific_factors.effectiveness||""}].filter(f=>f.text)});}
+  return s;
+}
+
+function fmtFinding(t){return t.replace(/^([^:]+):/,"<strong>$1:</strong>");}
+
+function shareResults() {
+  if(!lastAnalysis)return;
+  const {data,athlete,sessionType,load}=lastAnalysis;
+  const d=data.data;
+  const txt=["BWL PARA LIFT ANALYSIS",athlete+" | "+sessionType+" | "+load,new Date().toLocaleDateString("en-GB"),"","SCORES: Overall "+d.overall_score+" | Technique "+d.technique_score+" | Setup "+d.setup_score+" | Consistency "+d.consistency_score,"BAR SPEED: "+d.bar_speed_estimate+" m/s (concentric average)","","VERDICT: "+(d.summary||""),"","COACHING CUES:",...(d.immediate_coaching_cues||[]).map((c,i)=>(i+1)+". "+c),"","NEXT SESSION:",...(d.next_session_recommendations||[]).map(n=>"- "+n)].join("\n");
+  if(navigator.share){navigator.share({title:"BWL Lift Analysis - "+athlete,text:txt});}
+  else{navigator.clipboard.writeText(txt).then(()=>alert("Analysis copied!"));}
+}
+
+function newAnalysis() {
+  clearFile();
+  document.getElementById("results").classList.remove("visible");
+  document.getElementById("notes").value="";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function showErr(m){const e=document.getElementById("errorBox");e.textContent=m;e.classList.add("visible");}
+function hideErr(){document.getElementById("errorBox").classList.remove("visible");}
+
+checkConn();
+setInterval(checkConn,30000);
+</script>
+</body>
+</html>
