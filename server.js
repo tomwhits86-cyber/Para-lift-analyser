@@ -11,7 +11,7 @@ const os = require('os');
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 
 if (!API_KEY) {
