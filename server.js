@@ -21,7 +21,17 @@ if (!API_KEY) {
 
 const client = new Anthropic({ apiKey: API_KEY });
 
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type']
+}));
+```
+5. Commit the change
+
+Then in **Terminal**, type this and press Enter to restart the local server:
+```
+cd ~/Downloads && python3 -m http.server 8080
 app.use(express.json({ limit: '50mb' }));
 
 const upload = multer({
