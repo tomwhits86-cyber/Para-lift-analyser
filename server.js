@@ -23,6 +23,7 @@ const client = new Anthropic({ apiKey: API_KEY });
 
 app.use(cors({ origin: '*', methods: ['GET', 'POST'], allowedHeaders: ['Content-Type'] }));
 app.use(express.json({ limit: '50mb' }));
+app.use(express.static(__dirname));
 
 const upload = multer({
   dest: os.tmpdir(),
