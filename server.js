@@ -9,6 +9,7 @@ const path = require('path');
 const os = require('os');
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+ffmpeg.setFfprobePath(require('@ffprobe-installer/ffprobe').path);
 
 const app = express();
 const PORT = process.env.PORT;
