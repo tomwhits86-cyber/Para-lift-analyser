@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
+const ffprobeInstaller = require('@ffprobe-installer/ffprobe');
 const Anthropic = require('@anthropic-ai/sdk');
 const cors = require('cors');
 const fs = require('fs');
@@ -9,10 +10,10 @@ const path = require('path');
 const os = require('os');
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-ffmpeg.setFfprobePath(require('@ffprobe-installer/ffprobe').path);
+ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 8080;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 
 if (!API_KEY) {
@@ -61,10 +62,53 @@ async function extractFrames(videoPath, frameCount) {
   });
 }
 
-async function analyzeFrames(frames, athlete, sessionType, load, focusAreas, coachNotes, angle) {
-  const systemPrompt = 'You are an expert biomechanics analyst specialising in para powerlifting for British Weightlifting. Para powerlifting context: Athletes compete in bench press only. No leg drive. Respond ONLY with valid JSON in this exact structure: {"overall_score":0-100,"technique_score":0-100,"setup_score":0-100,"consistency_score":0-100,"verdict":"Green or Amber or Attention","summary":"2-3 sentence assessment","bar_speed_estimate":"number e.g. 0.62","setup_and_position":{"strengths":["finding"],"improvements":["finding"]},"bar_path_and_control":{"strengths":["finding"],"concerns":["finding"]},"power_output":{"assessment":"text","velocity_profile":"text"},"para_specific_factors":{"adaptations":"text","effectiveness":"text"},"rep_quality_profile":[85,78],"immediate_coaching_cues":["Cue one","Cue two","Cue three"],"next_session_recommendations":["Rec one","Rec two","Rec three"]}';
+async function analyzeFrames(frames, athlete, sessionType, load, coachNotes, angle) {
+  const systemPrompt = `You are an elite technical analyst for British Weightlifting World Class Programme, specialising in para powerlifting. You assess bench press attempts against the official World Para Powerlifting (WPP) Technical Rules.
 
-  const userPrompt = 'Athlete: ' + athlete + '\nSession: ' + sessionType + ' at ' + load + '\nCamera angle: ' + angle + '\nCoach notes: ' + (coachNotes || 'None') + '\n\nThese ' + frames.length + ' frames are from the concentric phase only (chest to lockout). Estimate bar speed from positional changes between frames. Return JSON only.';
+WPP RULES YOU MUST ASSESS AGAINST:
+1. START POSITION: Athlete must be supine on the bench. Shoulders and buttocks must maintain contact with bench throughout. Head may be raised. Feet flat on floor or on foot platform. No bridging allowed.
+2. UNRACK: Bar taken at arms length. Wait for Head Referee START signal before lowering.
+3. DESCENT: Bar lowered to chest under control. No bouncing.
+4. PAUSE: Bar must be held motionless on chest awaiting PRESS command. Any upward movement before the command is a red light. The pause must be visible and deliberate.
+5. PRESS: On PRESS command, bar pressed upward in a controlled, continuous movement. No downward movement after press begins (hitching). 
+6. LOCKOUT: Both elbows must lock out simultaneously and fully at the same time. Uneven lockout = red light. Elbows must be straight, not soft.
+7. COMPLETION: Bar returned to rack on RACK command from referee.
+
+ADDITIONAL TECHNICAL FACTORS TO ASSESS:
+- Elbow position relative to wrist and bar throughout: elbows should track under the bar, wrists stacked. Flared or collapsed elbows are a technical concern.
+- Uneven pressing: assess whether one side presses faster or higher than the other, which would cause uneven lockout.
+- Bar path: assess whether bar drifts toward head or feet, or steers laterally to one side (rolling or steering).
+- Body stability: assess whether hips, shoulders or head shift during the lift. Any loss of contact with bench is a rule violation.
+- Pressing technique: smoothness, intent, sticking point location.
+
+Respond ONLY with valid JSON in this exact structure:
+{
+  "overall_score": 0-100,
+  "setup_score": 0-100,
+  "pause_score": 0-100,
+  "press_score": 0-100,
+  "bar_speed_estimate": "e.g. 0.42",
+  "velocity_category": "Maximal (>0.8m/s) or Strength (0.5-0.8m/s) or Grind (<0.5m/s)",
+  "verdict": "Green or Amber or Red",
+  "verdict_headline": "max 8 words summarising the lift",
+  "summary": "2-3 sentences overall assessment referencing WPP rules",
+  "rule_adherence": [
+    {"rule": "Start Position and Body Stability", "status": "Pass or Fail or Warning", "detail": "specific observation"},
+    {"rule": "Descent and Chest Touch", "status": "Pass or Fail or Warning", "detail": "specific observation"},
+    {"rule": "Pause Quality", "status": "Pass or Fail or Warning", "detail": "specific observation"},
+    {"rule": "Press Command Response", "status": "Pass or Fail or Warning", "detail": "specific observation"},
+    {"rule": "Elbow Lockout - Simultaneous and Full", "status": "Pass or Fail or Warning", "detail": "specific observation"},
+    {"rule": "Bar Path and Steering", "status": "Pass or Fail or Warning", "detail": "specific observation"},
+    {"rule": "Elbow and Wrist Alignment", "status": "Pass or Fail or Warning", "detail": "specific observation"},
+    {"rule": "Uneven Pressing", "status": "Pass or Fail or Warning", "detail": "specific observation"}
+  ],
+  "strengths": ["strength 1", "strength 2", "strength 3"],
+  "technical_corrections": ["correction 1", "correction 2"],
+  "coaching_cues": ["cue 1", "cue 2", "cue 3"],
+  "rep_quality_profile": [85, 78, 82]
+}`;
+
+  const userPrompt = 'Athlete: ' + athlete + '\nSession: ' + sessionType + ' at ' + load + '\nCamera angle: ' + angle + '\nCoach notes: ' + (coachNotes || 'None') + '\n\nAnalyse these ' + frames.length + ' frames against World Para Powerlifting technical rules. Assess each rule area specifically. Estimate concentric bar speed from positional changes between frames. Return JSON only.';
 
   const content = [{ type: 'text', text: userPrompt }];
   frames.forEach(function(frame) {
@@ -73,7 +117,7 @@ async function analyzeFrames(frames, athlete, sessionType, load, focusAreas, coa
 
   const response = await client.messages.create({
     model: 'claude-opus-4-6',
-    max_tokens: 2000,
+    max_tokens: 2500,
     system: systemPrompt,
     messages: [{ role: 'user', content: content }],
   });
@@ -94,15 +138,14 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
     const athlete = req.body.athlete || 'Athlete';
     const sessionType = req.body.sessionType || 'Training';
     const load = req.body.load || 'Not specified';
-    const focusAreas = req.body.focusAreas || '';
     const coachNotes = req.body.coachNotes || '';
     const angle = req.body.angle || 'Side-on';
-    console.log('Analysing for ' + athlete);
+    console.log('Analysing for ' + athlete + ' - ' + load);
     const result = await extractFrames(req.file.path, 10);
     try { fs.unlinkSync(req.file.path); } catch(e) {}
     if (result.frames.length === 0) return res.status(400).json({ error: 'Could not extract frames' });
-    console.log('Extracted ' + result.frames.length + ' frames');
-    const analysis = await analyzeFrames(result.frames, athlete, sessionType, load, focusAreas, coachNotes, angle);
+    console.log('Extracted ' + result.frames.length + ' frames, sending to Claude');
+    const analysis = await analyzeFrames(result.frames, athlete, sessionType, load, coachNotes, angle);
     res.json({ success: true, data: analysis, metadata: { framesAnalyzed: result.frames.length, timestamp: new Date().toISOString() } });
   } catch(err) {
     console.error('Error:', err);
