@@ -4,8 +4,7 @@
   "description": "Para powerlifting video analysis backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -13,12 +12,10 @@
     "multer": "^1.4.5-lts.1",
     "fluent-ffmpeg": "^2.1.2",
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^1.4.1",
     "@anthropic-ai/sdk": "^0.15.0",
     "tmp": "^0.2.1",
-    "@ffprobe-installer/ffprobe": "^1.4.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
+    "puppeteer": "^21.0.0"
   },
   "engines": {
     "node": "18.x"
