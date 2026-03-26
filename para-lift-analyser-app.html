@@ -447,7 +447,113 @@ function renderResults(d,meta,athlete,sessionType,load) {
 }
 
 function exportPDF() {
-  window.print();
+  if (!lastAnalysis) return;
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = "Generating PDF...";
+  btn.disabled = true;
+
+  const { data, athlete, sessionType, load } = lastAnalysis;
+  const d = data.data;
+
+  // Build date string for filename
+  const dateStr = new Date().toLocaleDateString("en-GB", {day:"2-digit",month:"short",year:"numeric"}).replace(/ /g,"-");
+  const athleteSlug = (athlete || "Athlete").replace(/\s+/g, "-");
+  const loadSlug = (load || "").replace(/[^a-zA-Z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  const filename = athleteSlug + "-" + loadSlug + "-" + dateStr;
+
+  // Build the PDF HTML - styled navy/gold report
+  const vcls = d.verdict === "Green" ? "#2ecc7a" : d.verdict === "Red" ? "#e84040" : "#f0a830";
+  const sc = function(v) { return v >= 80 ? "#2ecc7a" : v >= 60 ? "#f0a830" : "#e84040"; };
+
+  const rulesHtml = (d.rule_adherence || []).map(function(r) {
+    const sc2 = (r.status||"").toLowerCase() === "pass" ? "#2ecc7a" : (r.status||"").toLowerCase() === "fail" ? "#e84040" : "#f0a830";
+    const bg2 = (r.status||"").toLowerCase() === "pass" ? "rgba(46,204,122,0.1)" : (r.status||"").toLowerCase() === "fail" ? "rgba(232,64,64,0.1)" : "rgba(240,168,48,0.1)";
+    return "<tr><td style=\"padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);\"><span style=\"background:" + bg2 + ";color:" + sc2 + ";font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:4px;text-transform:uppercase;\">" + (r.status||"?") + "</span></td><td style=\"padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f4f6fa;font-size:12px;font-weight:600;\">" + r.rule + "</td><td style=\"padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#c8d4e8;font-size:12px;\">" + r.detail + "</td></tr>";
+  }).join("");
+
+  const strengthsHtml = (d.strengths || []).map(function(s) {
+    return "<li style=\"padding:5px 0;color:#c8d4e8;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);list-style:none;padding-left:14px;position:relative;\"><span style=\"position:absolute;left:0;color:#2ecc7a;\">&#10003;</span>" + s + "</li>";
+  }).join("");
+
+  const correctionsHtml = (d.technical_corrections || []).map(function(c) {
+    return "<li style=\"padding:5px 0;color:#c8d4e8;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.04);list-style:none;padding-left:14px;position:relative;\"><span style=\"position:absolute;left:0;color:#f0a830;\">&#9651;</span>" + c + "</li>";
+  }).join("");
+
+  const cuesHtml = (d.coaching_cues || []).map(function(c, i) {
+    return "<div style=\"display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);\"><span style=\"font-size:28px;font-weight:900;color:#c9a84c;line-height:1;flex-shrink:0;width:28px;\">" + (i+1) + "</span><span style=\"font-size:14px;font-weight:600;color:#f4f6fa;line-height:1.4;\">" + c + "</span></div>";
+  }).join("");
+
+  const pdfHtml = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><style>@import url(\"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Barlow:wght@400;500;600&display=swap\");*{box-sizing:border-box;margin:0;padding:0;}body{background:#0a1628;color:#f4f6fa;font-family:Barlow,sans-serif;padding:24px;-webkit-print-color-adjust:exact;print-color-adjust:exact;}h1,h2,h3,h4{font-family:'Barlow Condensed',sans-serif;}.section{background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:16px;margin-bottom:14px;}.section-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:#c9a84c;margin-bottom:12px;}</style></head><body>" +
+    "<div style=\"display:flex;align-items:center;gap:12px;padding-bottom:16px;border-bottom:2px solid #c9a84c;margin-bottom:20px;\">" +
+    "<div style=\"width:44px;height:44px;background:#c9a84c;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-family:Barlow Condensed,sans-serif;font-weight:900;font-size:13px;color:#0a1628;flex-shrink:0;\">BWL</div>" +
+    "<div><div style=\"font-family:Barlow Condensed,sans-serif;font-size:10px;font-weight:600;letter-spacing:2.5px;color:#c9a84c;text-transform:uppercase;\">British Weightlifting</div>" +
+    "<div style=\"font-family:Barlow Condensed,sans-serif;font-size:22px;font-weight:700;color:#f4f6fa;text-transform:uppercase;\">Para Lift Analysis Report</div></div>" +
+    "<div style=\"margin-left:auto;text-align:right;\"><div style=\"font-size:12px;color:#f4f6fa;font-weight:600;\">" + athlete + "</div>" +
+    "<div style=\"font-size:11px;color:#8a9ab8;\">" + sessionType + " &middot; " + load + "</div>" +
+    "<div style=\"font-size:11px;color:#8a9ab8;\">" + new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"long",year:"numeric"}) + "</div></div></div>" +
+
+    "<div style=\"display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;\">" +
+    [["Overall",d.overall_score,"Lift quality"],["Setup",d.setup_score,"Start position"],["Pause",d.pause_score,"Chest hold"],["Press",d.press_score,"Execution"]].map(function(s) {
+      return "<div style=\"background:rgba(255,255,255,0.04);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:12px 8px;text-align:center;\">" +
+        "<div style=\"font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#8a9ab8;margin-bottom:6px;\">" + s[0] + "</div>" +
+        "<div style=\"font-family:Barlow Condensed,sans-serif;font-size:36px;font-weight:900;color:" + sc(s[1]) + ";line-height:1;\">" + (s[1]||"-") + "</div>" +
+        "<div style=\"font-size:9px;color:#8a9ab8;margin-top:2px;\">" + s[2] + "</div></div>";
+    }).join("") + "</div>" +
+
+    "<div style=\"background:#122040;border:1px solid #7a6030;border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;\">" +
+    "<div style=\"font-size:28px;\">&#9889;</div>" +
+    "<div><div style=\"font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#c9a84c;margin-bottom:2px;\">Concentric Average Velocity</div>" +
+    "<div style=\"display:flex;align-items:baseline;gap:5px;\"><span style=\"font-family:Barlow Condensed,sans-serif;font-size:40px;font-weight:900;color:#c9a84c;line-height:1;\">" + (d.bar_speed_estimate||"-") + "</span><span style=\"font-size:13px;color:#8a9ab8;\">m/s</span></div>" +
+    "<div style=\"font-size:12px;font-weight:600;color:#f0a830;\">" + (d.velocity_category||"") + "</div></div></div>" +
+
+    "<div style=\"background:" + (d.verdict==="Green"?"rgba(46,204,122,0.08)":d.verdict==="Red"?"rgba(232,64,64,0.08)":"rgba(240,168,48,0.08)") + ";border:1px solid " + vcls + ";border-radius:12px;padding:14px 16px;margin-bottom:14px;\">" +
+    "<div style=\"font-family:Barlow Condensed,sans-serif;font-size:18px;font-weight:700;color:" + vcls + ";margin-bottom:6px;\">" + (d.verdict_headline||d.verdict) + "</div>" +
+    "<div style=\"font-size:13px;color:#c8d4e8;line-height:1.5;\">" + (d.summary||"") + "</div></div>" +
+
+    "<div class=\"section\"><div class=\"section-title\">&#127937; World Para Powerlifting Rule Adherence</div>" +
+    "<table style=\"width:100%;border-collapse:collapse;\">" + rulesHtml + "</table></div>" +
+
+    "<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;\">" +
+    "<div style=\"background:rgba(46,204,122,0.05);border:1px solid rgba(46,204,122,0.15);border-radius:12px;padding:14px 16px;\">" +
+    "<div style=\"font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#2ecc7a;margin-bottom:10px;\">Technical Strengths</div>" +
+    "<ul style=\"padding:0;\">" + strengthsHtml + "</ul></div>" +
+    "<div style=\"background:rgba(240,168,48,0.05);border:1px solid rgba(240,168,48,0.15);border-radius:12px;padding:14px 16px;\">" +
+    "<div style=\"font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#f0a830;margin-bottom:10px;\">Corrections Required</div>" +
+    "<ul style=\"padding:0;\">" + correctionsHtml + "</ul></div></div>" +
+
+    "<div style=\"background:#122040;border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:14px 16px;\">" +
+    "<div style=\"font-family:Barlow Condensed,sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#c9a84c;margin-bottom:10px;\">Coaching Cues</div>" +
+    cuesHtml + "</div>" +
+
+    "</body></html>";
+
+  fetch(BACKEND + "/api/generate-pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ html: pdfHtml, filename: filename })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error("PDF generation failed");
+    return r.blob();
+  })
+  .then(function(blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename + ".pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    btn.textContent = orig;
+    btn.disabled = false;
+  })
+  .catch(function(err) {
+    showErr("PDF failed: " + err.message);
+    btn.textContent = orig;
+    btn.disabled = false;
+  });
 }
 
 function newAnalysis() {
