@@ -4,7 +4,6 @@ const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const ffprobeInstaller = require('@ffprobe-installer/ffprobe');
 const Anthropic = require('@anthropic-ai/sdk');
-const puppeteer = require('puppeteer');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
@@ -150,39 +149,6 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
     res.json({ success: true, data: analysis, metadata: { framesAnalyzed: result.frames.length, timestamp: new Date().toISOString() } });
   } catch(err) {
     console.error('Error:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/generate-pdf', express.json({ limit: '10mb' }), async function(req, res) {
-  try {
-    const { html, filename } = req.body;
-    if (!html) return res.status(400).json({ error: 'No HTML provided' });
-
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-      headless: 'new'
-    });
-
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    const pdf = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: { top: '20mm', bottom: '20mm', left: '15mm', right: '15mm' }
-    });
-
-    await browser.close();
-
-    const safeFilename = (filename || 'BWL-Lift-Analysis').replace(/[^a-zA-Z0-9-_]/g, '-') + '.pdf';
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="' + safeFilename + '"');
-    res.send(pdf);
-
-  } catch(err) {
-    console.error('PDF error:', err);
     res.status(500).json({ error: err.message });
   }
 });
