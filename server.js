@@ -117,7 +117,7 @@ Respond ONLY with valid JSON in this exact structure:
   });
 
   const response = await client.messages.create({
-    model: 'claude-opus-4-6',
+    model: 'claude-sonnet-4-6',
     max_tokens: 2500,
     system: systemPrompt,
     messages: [{ role: 'user', content: content }],
