@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>BWL Para Lift Analyser</title>
+<title>RefLight</title>
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap");
 :root {
@@ -135,6 +135,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .mode-dot.online{background:var(--green);}.mode-dot.offline{background:var(--red);}.mode-dot.checking{background:var(--amber);animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 .mode-text{color:var(--grey-light);flex:1;}.mode-text strong{color:var(--white);}
+.angle-guide{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(201,168,76,0.06);border:1px solid var(--card-border);border-radius:10px;margin-top:-12px;margin-bottom:20px;font-size:12px;}
+.angle-guide-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.angle-guide-text{color:var(--grey-light);line-height:1.5;}
 
 /* PDF STYLES */
 @media print {
@@ -152,10 +155,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 <div class="app">
 <header>
   <div class="logo-block">
-    <div class="logo-mark">BWL</div>
+    <div class="logo-mark">RL</div>
     <div class="logo-text">
-      <div class="org">British Weightlifting</div>
-      <div class="tool">Para Lift Analyser</div>
+      <div class="org">RefLight</div>
+      <div class="tool">Lift Analyser</div>
     </div>
   </div>
   <div class="conn-dot" id="connDot"></div>
@@ -167,14 +170,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 <div class="section-title">Session Setup</div>
 <div class="ctx-grid">
   <div class="ctx-field">
-    <label>Athlete</label>
-    <select id="athlete">
-      <option value="">Select...</option>
-      <option>Matthew Harding</option>
-      <option>Olivia Broome</option>
-      <option>Louise Sugden</option>
-      <option>Other</option>
-    </select>
+    <label>Athlete Name</label>
+    <input type="text" id="athlete" placeholder="e.g. Olivia Broome">
   </div>
   <div class="ctx-field">
     <label>Session</label>
@@ -187,18 +184,30 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
     </select>
   </div>
   <div class="ctx-field">
+    <label>Weight Class</label>
+    <input type="text" id="weightClass" placeholder="e.g. 59kg">
+  </div>
+  <div class="ctx-field">
+    <label>Bodyweight</label>
+    <input type="text" id="bodyweight" placeholder="e.g. 58.4kg">
+  </div>
+  <div class="ctx-field">
     <label>Load / Attempt</label>
     <input type="text" id="load" placeholder="e.g. 120kg @ 85%">
   </div>
   <div class="ctx-field">
     <label>Camera Angle</label>
-    <select id="angle">
+    <select id="angle" onchange="updateAngleGuidance()">
+      <option>45 degree / Referee angle</option>
       <option>Side-on</option>
       <option>Front</option>
       <option>Rear</option>
-      <option>Overhead</option>
     </select>
   </div>
+</div>
+<div class="angle-guide" id="angleGuide">
+  <div class="angle-guide-icon">📷</div>
+  <div class="angle-guide-text" id="angleGuideText">Position camera at 45 degrees from the end of the bench, at referee height (roughly bench height), approximately 2-3 metres away. This gives the best view of elbow lockout, pause, and chest contact.</div>
 </div>
 <div class="upload-section">
   <div class="section-title">Video Upload</div>
@@ -348,6 +357,8 @@ async function runAnalysis() {
   hideErr();
   const athlete=document.getElementById("athlete").value||"Athlete";
   const sessionType=document.getElementById("sessionType").value;
+  const weightClass=document.getElementById("weightClass").value||"Not specified";
+  const bodyweight=document.getElementById("bodyweight").value||"Not specified";
   const load=document.getElementById("load").value||"Not specified";
   const angle=document.getElementById("angle").value;
   const notes=document.getElementById("notes").value;
@@ -362,6 +373,8 @@ async function runAnalysis() {
     fd.append("video",currentFile);
     fd.append("athlete",athlete);
     fd.append("sessionType",sessionType);
+    fd.append("weightClass",weightClass);
+    fd.append("bodyweight",bodyweight);
     fd.append("load",load);
     fd.append("angle",angle);
     fd.append("coachNotes",notes);
@@ -395,7 +408,11 @@ function animSteps() {
 
 function renderResults(d,meta,athlete,sessionType,load) {
   document.getElementById("rAthlete").textContent=athlete;
-  document.getElementById("rMeta").textContent=sessionType+" - "+load+" - "+new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})+" - "+(meta&&meta.framesAnalyzed?meta.framesAnalyzed:10)+" frames analysed";
+  const wc=document.getElementById("weightClass").value||"";
+  const bw=document.getElementById("bodyweight").value||"";
+  const wcStr = wc ? " | "+wc+" class" : "";
+  const bwStr = bw ? " | BW: "+bw : "";
+  document.getElementById("rMeta").textContent=sessionType+" - "+load+wcStr+bwStr+" - "+new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})+" - "+(meta&&meta.framesAnalyzed?meta.framesAnalyzed:10)+" frames";
 
   const scores=[
     {label:"Overall",val:d.overall_score,sub:"Lift quality"},
@@ -495,7 +512,7 @@ function exportPDF() {
       doc.setTextColor(...navy);
       doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
-      doc.text('BWL PARA LIFT ANALYSIS REPORT', margin, 12);
+      doc.text('RL PARA LIFT ANALYSIS REPORT', margin, 12);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text('ref-light.co.uk', pageW - margin, 12, { align: 'right' });
@@ -511,7 +528,10 @@ function exportPDF() {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...grey);
-      doc.text(sessionType + ' - ' + load + ' - ' + new Date().toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'long',year:'numeric'}), margin, y);
+      const wcVal=document.getElementById("weightClass").value||"";
+      const bwVal=document.getElementById("bodyweight").value||"";
+      const metaStr = sessionType + ' - ' + load + (wcVal ? ' | '+wcVal+' class' : '') + (bwVal ? ' | BW: '+bwVal : '') + ' - ' + new Date().toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'long',year:'numeric'});
+      doc.text(metaStr, margin, y);
       y += 8;
 
       // Divider
@@ -696,6 +716,18 @@ function newAnalysis() {
 
 function showErr(m){const e=document.getElementById("errorBox");e.textContent=m;e.classList.add("visible");}
 function hideErr(){document.getElementById("errorBox").classList.remove("visible");}
+
+const angleGuides = {
+  "45 degree / Referee angle": "Position camera at 45 degrees from either end of the bench, at roughly bench height, 2-3 metres away. Best for: elbow lockout assessment, simultaneous lockout, pause quality, chest contact, body stability. Recommended for WPP rule adherence analysis.",
+  "Side-on": "Position camera directly to the side of the athlete, perpendicular to the bench, at bar height, 2-4 metres away. Best for: bar path, descent control, sticking point, velocity estimation (ensure plates are visible for calibration). Note: cannot confirm simultaneous lockout from this angle.",
+  "Front": "Position camera directly in front of the athlete at the head end of the bench, at bar height, 2-3 metres away. Best for: uneven pressing, lateral bar drift, elbow symmetry. Note: chest touch and pause cannot be assessed from this angle.",
+  "Rear": "Position camera directly behind the athlete at the rack end of the bench, at bar height, 2-3 metres away. Best for: elbow symmetry from behind, body stability. Note: limited rule assessment possible from this angle."
+};
+
+function updateAngleGuidance() {
+  const angle = document.getElementById("angle").value;
+  document.getElementById("angleGuideText").textContent = angleGuides[angle] || "";
+}
 
 checkConn();
 setInterval(checkConn,30000);
