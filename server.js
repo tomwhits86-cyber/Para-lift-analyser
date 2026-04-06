@@ -315,13 +315,12 @@ For each rule, assess: "If this had been a WPP competition lift, would a Head Re
 WPP RULES TO ASSESS:
 1. START POSITION AND STABILITY: Supine, shoulders and buttocks maintaining bench contact. Head may be raised. No bridging. Athlete must be visibly stable before receiving START command.
 2. DESCENT AND CHEST TOUCH: Bar lowered to chest under control. No bouncing. Bar must touch chest/sternum.
-3. PAUSE QUALITY: Bar completely motionless on chest. Any upward movement before inferred PRESS command = red light. Was the pause long enough and still enough for a referee to give PRESS command?
-4. PRESS: Controlled continuous upward movement after inferred PRESS command. No hitching or downward movement.
-5. ELBOW LOCKOUT - SIMULTANEOUS AND FULL: Both elbows lock out simultaneously and completely. Any lag between left and right = red light.
-6. BODY STABILITY: No shifting during lift. No loss of bench contact.
-7. BAR PATH AND STEERING: No lateral drift or rolling. Vertical travel.
-8. ELBOW AND WRIST ALIGNMENT: Elbows tracking under bar, wrists stacked.
-9. UNEVEN PRESSING: Both sides pressing at equal height and speed throughout.
+3. PAUSE QUALITY: Bar completely motionless on chest. Any upward movement before inferred PRESS command = red light. Was the pause long enough and still enough for a referee to give PRESS command? NOTE: Under WPP rules the lifter does not wait for a referee PRESS command — the lifter presses on their own initiative or a coach's cue. Assess only whether the bar was fully motionless before upward movement began.
+4. ELBOW LOCKOUT - SIMULTANEOUS AND FULL: Both elbows lock out simultaneously and completely. Any lag between left and right = red light.
+5. BODY STABILITY: No shifting during lift. No loss of bench contact.
+6. BAR PATH AND STEERING: No lateral drift or rolling. Vertical travel.
+7. ELBOW AND WRIST ALIGNMENT: Elbows tracking under bar, wrists stacked.
+8. UNEVEN PRESSING: Both sides pressing at equal height and speed throughout.
 
 Only assess what is visible from the stated camera angle. Apply the angle limitations strictly.
 
@@ -332,14 +331,17 @@ Write all feedback in natural coaching language. You are a coach describing what
 - If you cannot assess something due to camera angle or video quality, say "This cannot be fully assessed from this camera angle" — do not reference frames or what was or was not captured.
 - Write as an expert coach giving feedback after watching a training video. Every sentence should sound like it came from a person, not a system.
 
-SPOTTER AWARENESS:
-Training videos frequently include spotters. Apply these rules strictly:
-1. COMPLETELY IGNORE the spotter during setup, unrack, descent, and rack phases. A spotter assisting the unrack or standing nearby is completely normal and must never be mentioned or flagged.
-2. ONLY flag spotter contact if there is clear visual evidence of the spotter's hands making contact with the bar or plates specifically during the CONCENTRIC PRESS phase (from chest touch upward). This would suggest the athlete may have received physical assistance during the press itself.
-3. If you flag spotter contact during the press, state it once briefly in the summary only. Do not repeat it across multiple rule sections.
-4. Do NOT flag spotter proximity, hands near the bar, or hands during pause phase. Only flag definitive contact during the upward press movement.
-5. Never describe the lift as potentially invalid due to spotter presence unless hands are clearly on the bar during the concentric phase with obvious upward force.
-6. Do NOT penalise scores for spotter presence at any phase.
+PEOPLE IN THE VIDEO — CRITICAL:
+Training videos may include other people such as coaches or handlers. Apply these rules strictly:
+- NEVER mention, describe, or reference any person other than the athlete in any part of your feedback. Not in the summary, not in rule details, not in corrections, not anywhere.
+- If the view of any moment is partially limited, state only that the camera angle does not allow a clear assessment at that point. Never attribute a limited view to another person being in the frame.
+- Focus entirely on what is visible of the athlete and the bar. Describe only the athlete's technique and the bar's movement.
+
+VELOCITY:
+- "bar_speed_estimate" must be a numeric value in m/s (e.g. 0.35), estimated from bar displacement between concentric frames.
+- This is an AI visual estimate only — not a calibrated measurement. It should be treated as a directional indicator, not an absolute value.
+- "velocity_category": assign based on the numeric value — "Explosive" if >0.80, "Optimal" if 0.55–0.80, "Grind" if 0.35–0.54, "Maximal Effort" if <0.35.
+- "velocity_coaching_note": one sentence starting directly with the coaching implication. Do NOT begin with the category name. Example: "Consider reducing load or using intent cues to restore bar speed." Not: "Grind — consider reducing load..."
 
 Respond ONLY with valid JSON:
 {
@@ -347,16 +349,16 @@ Respond ONLY with valid JSON:
   "setup_score": 0-100,
   "pause_score": 0-100,
   "press_score": 0-100,
-  "bar_speed_estimate": "estimated m/s from concentric frames",
-  "velocity_category": "MUST match the bar_speed_estimate value exactly: use Maximal if value >0.8, Strength if value 0.5-0.8, Grind if value <0.5",
+  "bar_speed_estimate": <number e.g. 0.35>,
+  "velocity_category": "Explosive or Optimal or Grind or Maximal Effort",
+  "velocity_coaching_note": "coaching implication starting directly with the action or observation — do not repeat the category name",
   "verdict": "Green or Amber or Red",
   "verdict_headline": "max 8 words - referee outcome prediction",
-  "summary": "2-3 sentences. State what the inferred referee outcome would be and why. Reference angle limitations.",
+  "summary": "2-3 sentences. State what the inferred referee outcome would be and why. Reference angle limitations if relevant. Do not mention any person other than the athlete.",
   "rule_adherence": [
     {"rule": "Start Position and Body Stability", "status": "Pass or Fail or Warning", "detail": "specific observation with referee outcome prediction"},
     {"rule": "Descent and Chest Touch", "status": "Pass or Fail or Warning", "detail": "specific observation"},
-    {"rule": "Pause Quality", "status": "Pass or Fail or Warning", "detail": "WPP: was the bar completely motionless and held long enough to satisfy a Head Referee? Lifter does not need to wait for a referee PRESS command. Assess stillness and duration only."},
-    {"rule": "Press Command Response", "status": "Pass or Fail or Warning", "detail": "WPP: lifter may press on own accord or on coach command. Assess whether the press began from a position of complete stillness or whether bar moved prematurely before being fully motionless."},
+    {"rule": "Pause Quality", "status": "Pass or Fail or Warning", "detail": "WPP: was the bar completely motionless and held long enough? Lifter does not wait for a referee PRESS command — assess stillness and duration only."},
     {"rule": "Elbow Lockout - Simultaneous and Full", "status": "Pass or Fail or Warning", "detail": "assess or note angle limitation"},
     {"rule": "Bar Path and Steering", "status": "Pass or Fail or Warning", "detail": "specific observation"},
     {"rule": "Elbow and Wrist Alignment", "status": "Pass or Fail or Warning", "detail": "specific observation or note angle limitation"},
@@ -429,9 +431,8 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
     console.log('Boundaries detected:', JSON.stringify(boundaries));
 
     // Pass 2: Extract exactly 12 frames at equal intervals within confirmed lift window
-    // Use a slightly padded window to ensure we capture full lift including lockout
     const windowStart = Math.max(0, boundaries.liftStart);
-    const windowEnd = Math.min(duration, boundaries.liftEnd + 0.5); // Add 0.5s buffer to catch lockout
+    const windowEnd = Math.min(duration, boundaries.liftEnd + 0.5);
     const frameCount = 12;
     
     console.log('Extracting ' + frameCount + ' equal-interval frames from ' + windowStart.toFixed(2) + 's to ' + windowEnd.toFixed(2) + 's');
