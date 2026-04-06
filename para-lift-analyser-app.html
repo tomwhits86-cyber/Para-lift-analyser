@@ -24,6 +24,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .conn-dot{width:8px;height:8px;border-radius:50%;background:var(--grey);transition:background 0.3s;}
 .conn-dot.online{background:var(--green);}.conn-dot.offline{background:var(--red);}
 .section-title{font-family:"Barlow Condensed",sans-serif;font-size:11px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.section-title-large{font-family:"Barlow Condensed",sans-serif;font-size:22px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
 .ctx-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
 .ctx-field{display:flex;flex-direction:column;gap:5px;}
 .ctx-field label{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);}
@@ -143,7 +144,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .angle-guide{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(201,168,76,0.06);border:1px solid var(--card-border);border-radius:10px;margin-top:-12px;margin-bottom:20px;font-size:12px;}
 .angle-guide-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
 .angle-guide-text{color:var(--grey-light);line-height:1.5;}
-
 /* PDF STYLES */
 @media print {
   body{background:#0a1628 !important;color:#f4f6fa !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -172,7 +172,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
   <div class="mode-dot checking" id="modeDot"></div>
   <div class="mode-text" id="modeText">Connecting to analysis server...</div>
 </div>
-<div class="section-title">Session Setup</div>
+<div class="section-title-large">Lift Set Up</div>
 <div class="ctx-grid">
   <div class="ctx-field">
     <label>Athlete Name</label>
@@ -263,7 +263,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
   <div class="vel-card">
     <div class="vel-icon">&#9889;</div>
     <div>
-      <div class="vel-label">Concentric Average Velocity</div>
+      <div class="vel-label">AI Velocity Estimate (uncalibrated)</div>
       <div class="vel-num">
         <div class="vel-val" id="velVal">-</div>
         <div class="vel-unit">m/s</div>
@@ -295,12 +295,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
   </div>
 </div>
 </div>
-
 <script>
 const BACKEND = "https://para-lift-analyser-production.up.railway.app";
 let currentFile = null;
 let lastAnalysis = null;
-
 async function checkConn() {
   try {
     const r = await fetch(BACKEND+"/health",{signal:AbortSignal.timeout(8000),mode:"cors"});
@@ -309,7 +307,6 @@ async function checkConn() {
   setMode("offline");
   return false;
 }
-
 function setMode(m) {
   const dot=document.getElementById("modeDot"),txt=document.getElementById("modeText"),cd=document.getElementById("connDot");
   if(m==="online"){
@@ -322,7 +319,6 @@ function setMode(m) {
     cd.className="conn-dot offline";
   }
 }
-
 function handleFile(evt) {
   const f=evt.target.files[0];
   if(!f)return;
@@ -336,7 +332,6 @@ function handleFile(evt) {
   document.getElementById("vidPreview").classList.add("visible");
   updateBtn();hideErr();
 }
-
 function clearFile() {
   currentFile=null;
   document.getElementById("videoInput").value="";
@@ -345,19 +340,16 @@ function clearFile() {
   document.getElementById("uploadZone").classList.remove("has-file");
   updateBtn();
 }
-
 function fmtBytes(b) {
   if(b<1024)return b+" B";
   if(b<1048576)return (b/1024).toFixed(1)+" KB";
   return (b/1048576).toFixed(1)+" MB";
 }
-
 function updateBtn() {
   const btn=document.getElementById("analyseBtn"),lbl=document.getElementById("btnLabel");
   if(currentFile){btn.disabled=false;lbl.textContent="Analyse This Lift";}
   else{btn.disabled=true;lbl.textContent="Upload a Video First";}
 }
-
 async function runAnalysis() {
   if(!currentFile)return;
   hideErr();
@@ -398,7 +390,6 @@ async function runAnalysis() {
     document.getElementById("btnLabel").textContent="Analyse This Lift";
   }
 }
-
 let si=null;
 function animSteps() {
   const steps=["s1","s2","s3","s4"];
@@ -411,15 +402,14 @@ function animSteps() {
     else clearInterval(si);
   },1200);
 }
-
 function renderResults(d,meta,athlete,sessionType,load) {
-  document.getElementById("rAthlete").textContent=athlete;
+  const athleteDisplay=athlete.replace(/\b\w/g,c=>c.toUpperCase());
+  document.getElementById("rAthlete").textContent=athleteDisplay;
   const wc=document.getElementById("weightClass").value||"";
   const bw=document.getElementById("bodyweight").value||"";
   const wcStr = wc ? " | "+wc+" class" : "";
   const bwStr = bw ? " | BW: "+bw : "";
   document.getElementById("rMeta").textContent=sessionType+" - "+load+wcStr+bwStr+" - "+new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})+" - "+(meta&&meta.framesAnalyzed?meta.framesAnalyzed:10)+" frames";
-
   const scores=[
     {label:"Overall",val:d.overall_score,sub:"Lift quality"},
     {label:"Setup",val:d.setup_score,sub:"Start position"},
@@ -430,48 +420,38 @@ function renderResults(d,meta,athlete,sessionType,load) {
     const c=s.val>=80?"green":s.val>=60?"amber":"red";
     return "<div class='score-card'><div class='score-lbl'>"+s.label+"</div><div class='score-val "+c+"'>"+(s.val||"-")+"</div><div class='score-sub'>"+s.sub+"</div></div>";
   }).join("");
-
   const velRaw=d.bar_speed_estimate||"-"; const velNumMatch=String(velRaw).match(/(\d+\.?\d*)/); const vel=velNumMatch?velNumMatch[1]:"-";
   document.getElementById("velVal").textContent=vel;
   const vn=parseFloat(vel);
   let cat="";
-  if(!isNaN(vn)){if(vn>=0.8)cat="Maximal (>0.8m/s)";else if(vn>=0.5)cat="Strength (0.5-0.8m/s)";else cat="Grind (<0.5m/s)";}
-  document.getElementById("velCat").textContent=cat;
-  document.getElementById("velNote").textContent="";
-
+  if(!isNaN(vn)){if(vn>0.80)cat="Explosive";else if(vn>=0.55)cat="Optimal";else if(vn>=0.35)cat="Grind";else cat="Maximal Effort";}
+  document.getElementById("velCat").textContent=d.velocity_category||cat;
+  document.getElementById("velNote").textContent=d.velocity_coaching_note||"";
   const vcls={Green:"green",Amber:"amber",Red:"red"};
   const vico={Green:"[GOOD]",Amber:"[WARNING]",Red:"[RED LIGHT]"};
   const v=d.verdict||"Amber";
   document.getElementById("verdictEl").innerHTML="<div class='verdict "+(vcls[v]||"amber")+"'><div class='verdict-icon'>"+vico[v]+"</div><div><h3 class='editable' contenteditable='true'>"+(d.verdict_headline||v)+"</h3><p class='editable' contenteditable='true'>"+(d.summary||"")+"</p></div></div>";
-
   const rules=d.rule_adherence||[];
   document.getElementById("rulesList").innerHTML=rules.map(r=>{
     const sc=(r.status||"").toLowerCase();
     const bc=sc==="pass"?"pass":sc==="fail"?"fail":"warning";
     return "<div class='rule-row'><div class='rule-status'><span class='rule-badge "+bc+"'>"+(r.status||"?")+"</span></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail editable' contenteditable='true'>"+r.detail+"</div></div></div>";
   }).join("");
-
   const strengths=d.strengths||[];
   document.getElementById("strengthsList").innerHTML=strengths.map(s=>"<div class='strength-item'><div class='strength-dot'></div><span class='editable' contenteditable='true'>"+s+"</span></div>").join("");
-
   const corrections=d.technical_corrections||[];
   document.getElementById("correctionsList").innerHTML=corrections.map(c=>"<div class='correction-item'><div class='correction-dot'></div><span class='editable' contenteditable='true'>"+c+"</span></div>").join("");
-
   const cues=d.coaching_cues||[];
   document.getElementById("cuesList").innerHTML=cues.map((c,i)=>"<div class='cue'><div class='cue-num'>"+(i+1)+"</div><div class='cue-text editable' contenteditable='true'>"+c+"</div></div>").join("");
-
   document.getElementById("results").classList.add("visible");
   document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"});
 }
-
 function exportPDF() {
   if (!lastAnalysis) { showErr("No analysis to export. Please run an analysis first."); return; }
   const btn = document.getElementById ? document.querySelector('.act-btn.primary') : null;
   if (btn) { btn.textContent = "Generating PDF..."; btn.disabled = true; }
-
   const { data, athlete, sessionType, load } = lastAnalysis;
   const d = data.data;
-
   function doExport() {
     try {
       const { jsPDF } = window.jspdf;
@@ -487,15 +467,10 @@ function exportPDF() {
       const margin = 15;
       const contentW = pageW - margin * 2;
       let y = 0;
-
       function newPage() { doc.addPage(); doc.setFillColor(...navy); doc.rect(0,0,210,297,'F'); y = 20; }
       function checkPage(needed) { if (y + needed > 275) newPage(); }
-
-      // Background
       doc.setFillColor(...navy);
       doc.rect(0, 0, 210, 297, 'F');
-
-      // Header
       doc.setFillColor(...gold);
       doc.rect(0, 0, 210, 18, 'F');
       doc.setTextColor(...navy);
@@ -505,10 +480,7 @@ function exportPDF() {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text('ref-light.co.uk', pageW - margin, 12, { align: 'right' });
-
       y = 26;
-
-      // Athlete
       doc.setTextColor(...white);
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
@@ -522,14 +494,10 @@ function exportPDF() {
       const metaStr = sessionType + ' - ' + load + (wcVal ? ' | ' + wcVal + ' class' : '') + (bwVal ? ' | BW: ' + bwVal : '') + ' - ' + new Date().toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'long',year:'numeric'});
       doc.text(metaStr, margin, y);
       y += 8;
-
-      // Divider
       doc.setDrawColor(...gold);
       doc.setLineWidth(0.4);
       doc.line(margin, y, pageW - margin, y);
       y += 8;
-
-      // Scores
       const scores = [['OVERALL', d.overall_score||0], ['SETUP', d.setup_score||0], ['PAUSE', d.pause_score||0], ['PRESS', d.press_score||0]];
       const boxW = contentW / 4 - 2;
       scores.forEach(function(s, i) {
@@ -547,26 +515,28 @@ function exportPDF() {
         doc.text(String(val), x + boxW/2, y + 17, { align: 'center' });
       });
       y += 28;
-
-      // Velocity
       const velEl = document.getElementById("velVal");
       const velCatEl = document.getElementById("velCat");
+      const velNoteEl = document.getElementById("velNote");
       const velDisplay = velEl ? velEl.textContent : (d.bar_speed_estimate || '-');
       const velCatDisplay = velCatEl ? velCatEl.textContent : (d.velocity_category || '');
+      const velNoteDisplay = velNoteEl ? velNoteEl.textContent : (d.velocity_coaching_note || '');
       doc.setFillColor(18, 32, 64);
-      doc.roundedRect(margin, y, contentW, 16, 2, 2, 'F');
+      doc.roundedRect(margin, y, contentW, 20, 2, 2, 'F');
       doc.setTextColor(...gold);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
-      doc.text('CONCENTRIC AVERAGE VELOCITY', margin + 4, y + 6);
+      doc.text('AI VELOCITY ESTIMATE (UNCALIBRATED)', margin + 4, y + 6);
       doc.setFontSize(15);
       doc.text(velDisplay + ' m/s', margin + 4, y + 13);
       doc.setTextColor(...amber);
       doc.setFontSize(8);
-      doc.text(velCatDisplay, margin + 55, y + 13);
-      y += 22;
-
-      // Verdict - read from DOM
+      doc.text(velCatDisplay, margin + 40, y + 13);
+      doc.setTextColor(...grey);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      if (velNoteDisplay) doc.text(velNoteDisplay.substring(0, 80), margin + 4, y + 18);
+      y += 26;
       const vcol = d.verdict === 'Green' ? green : d.verdict === 'Red' ? red : amber;
       const hEl = document.querySelector('#verdictEl h3');
       const pEl = document.querySelector('#verdictEl p');
@@ -584,8 +554,6 @@ function exportPDF() {
       const summaryLines = doc.splitTextToSize(editedSummary, contentW - 8);
       doc.text(summaryLines.slice(0, 3), margin + 4, y + 15);
       y += 32;
-
-      // WPP Rules
       checkPage(20);
       doc.setTextColor(...gold);
       doc.setFontSize(9);
@@ -618,8 +586,6 @@ function exportPDF() {
         y += 15;
       });
       y += 4;
-
-      // Strengths
       checkPage(20);
       doc.setTextColor(...green);
       doc.setFontSize(9);
@@ -641,8 +607,6 @@ function exportPDF() {
         y += lines.length > 1 ? 12 : 7;
       });
       y += 4;
-
-      // Corrections
       checkPage(20);
       doc.setTextColor(...amber);
       doc.setFontSize(9);
@@ -664,8 +628,6 @@ function exportPDF() {
         y += lines.length > 1 ? 12 : 7;
       });
       y += 4;
-
-      // Cues
       checkPage(20);
       doc.setTextColor(...gold);
       doc.setFontSize(9);
@@ -689,20 +651,16 @@ function exportPDF() {
         doc.text(cLines[0] || '', margin + 12, y + 8);
         y += 14;
       });
-
-      // Save
       const dateStr = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/ /g,'-');
       const athleteSlug = (athlete||'Athlete').replace(/\s+/g,'-');
       const loadSlug = (load||'').replace(/[^a-zA-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
       doc.save(athleteSlug+'-'+loadSlug+'-'+dateStr+'.pdf');
-
       if (btn) { btn.textContent = "Export PDF Report"; btn.disabled = false; }
     } catch(err) {
       showErr('PDF error: ' + err.message);
       if (btn) { btn.textContent = "Export PDF Report"; btn.disabled = false; }
     }
   }
-
   if (window.jspdf) {
     doExport();
   } else {
@@ -722,22 +680,18 @@ function newAnalysis() {
   document.getElementById("notes").value="";
   window.scrollTo({top:0,behavior:"smooth"});
 }
-
 function showErr(m){const e=document.getElementById("errorBox");e.textContent=m;e.classList.add("visible");}
 function hideErr(){document.getElementById("errorBox").classList.remove("visible");}
-
 const angleGuides = {
   "45 degree / Referee angle": "Position camera at 45 degrees from either end of the bench, at roughly bench height, 2-3 metres away. Best for: elbow lockout assessment, simultaneous lockout, pause quality, chest contact, body stability. Recommended for WPP rule adherence analysis.",
   "Side-on": "Position camera directly to the side of the athlete, perpendicular to the bench, at bar height, 2-4 metres away. Best for: bar path, descent control, sticking point, velocity estimation (ensure plates are visible for calibration). Note: cannot confirm simultaneous lockout from this angle.",
   "Front": "Position camera directly in front of the athlete at the head end of the bench, at bar height, 2-3 metres away. Best for: uneven pressing, lateral bar drift, elbow symmetry. Note: chest touch and pause cannot be assessed from this angle.",
   "Rear": "Position camera directly behind the athlete at the rack end of the bench, at bar height, 2-3 metres away. Best for: elbow symmetry from behind, body stability. Note: limited rule assessment possible from this angle."
 };
-
 function updateAngleGuidance() {
   const angle = document.getElementById("angle").value;
   document.getElementById("angleGuideText").textContent = angleGuides[angle] || "";
 }
-
 checkConn();
 setInterval(checkConn,30000);
 </script>
