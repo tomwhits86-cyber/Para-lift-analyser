@@ -431,7 +431,7 @@ function renderResults(d,meta,athlete,sessionType,load) {
     return "<div class='score-card'><div class='score-lbl'>"+s.label+"</div><div class='score-val "+c+"'>"+(s.val||"-")+"</div><div class='score-sub'>"+s.sub+"</div></div>";
   }).join("");
 
-  const vel=d.bar_speed_estimate||"-";
+  const velRaw=d.bar_speed_estimate||"-"; const velNumMatch=String(velRaw).match(/(\d+\.?\d*)/); const vel=velNumMatch?velNumMatch[1]:"-";
   document.getElementById("velVal").textContent=vel;
   document.getElementById("velCat").textContent=d.velocity_category||"";
   const vn=parseFloat(vel);
@@ -470,18 +470,14 @@ function renderResults(d,meta,athlete,sessionType,load) {
 }
 
 function exportPDF() {
-  if (!lastAnalysis) return;
-  const btn = event.target;
-  const orig = btn.textContent;
-  btn.textContent = "Generating PDF...";
-  btn.disabled = true;
+  if (!lastAnalysis) { showErr("No analysis to export. Please run an analysis first."); return; }
+  const btn = document.getElementById ? document.querySelector('.act-btn.primary') : null;
+  if (btn) { btn.textContent = "Generating PDF..."; btn.disabled = true; }
 
   const { data, athlete, sessionType, load } = lastAnalysis;
   const d = data.data;
 
-  const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-  script.onload = function() {
+  function doExport() {
     try {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -497,35 +493,27 @@ function exportPDF() {
       const contentW = pageW - margin * 2;
       let y = 0;
 
-      function newPage() {
-        doc.addPage();
-        doc.setFillColor(...navy);
-        doc.rect(0, 0, 210, 297, 'F');
-        y = 20;
-      }
-
-      function checkPage(needed) {
-        if (y + needed > 275) newPage();
-      }
+      function newPage() { doc.addPage(); doc.setFillColor(...navy); doc.rect(0,0,210,297,'F'); y = 20; }
+      function checkPage(needed) { if (y + needed > 275) newPage(); }
 
       // Background
       doc.setFillColor(...navy);
       doc.rect(0, 0, 210, 297, 'F');
 
-      // Gold header bar
+      // Header
       doc.setFillColor(...gold);
       doc.rect(0, 0, 210, 18, 'F');
       doc.setTextColor(...navy);
       doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
-      doc.text('RL PARA LIFT ANALYSIS REPORT', margin, 12);
+      doc.text('REFLIGHT LIFT ANALYSIS REPORT', margin, 12);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text('ref-light.co.uk', pageW - margin, 12, { align: 'right' });
 
       y = 26;
 
-      // Athlete name
+      // Athlete
       doc.setTextColor(...white);
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
@@ -534,9 +522,9 @@ function exportPDF() {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...grey);
-      const wcVal=document.getElementById("weightClass").value||"";
-      const bwVal=document.getElementById("bodyweight").value||"";
-      const metaStr = sessionType + ' - ' + load + (wcVal ? ' | '+wcVal+' class' : '') + (bwVal ? ' | BW: '+bwVal : '') + ' - ' + new Date().toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'long',year:'numeric'});
+      const wcVal = document.getElementById("weightClass") ? document.getElementById("weightClass").value : "";
+      const bwVal = document.getElementById("bodyweight") ? document.getElementById("bodyweight").value : "";
+      const metaStr = sessionType + ' - ' + load + (wcVal ? ' | ' + wcVal + ' class' : '') + (bwVal ? ' | BW: ' + bwVal : '') + ' - ' + new Date().toLocaleDateString('en-GB', {weekday:'short',day:'numeric',month:'long',year:'numeric'});
       doc.text(metaStr, margin, y);
       y += 8;
 
@@ -547,7 +535,7 @@ function exportPDF() {
       y += 8;
 
       // Scores
-      const scores = [['OVERALL', d.overall_score || 0], ['SETUP', d.setup_score || 0], ['PAUSE', d.pause_score || 0], ['PRESS', d.press_score || 0]];
+      const scores = [['OVERALL', d.overall_score||0], ['SETUP', d.setup_score||0], ['PAUSE', d.pause_score||0], ['PRESS', d.press_score||0]];
       const boxW = contentW / 4 - 2;
       scores.forEach(function(s, i) {
         const x = margin + i * (boxW + 2.5);
@@ -558,14 +546,18 @@ function exportPDF() {
         doc.setTextColor(...grey);
         doc.setFontSize(7);
         doc.setFont('helvetica', 'bold');
-        doc.text(s[0], x + boxW / 2, y + 7, { align: 'center' });
+        doc.text(s[0], x + boxW/2, y + 7, { align: 'center' });
         doc.setTextColor(...col);
         doc.setFontSize(18);
-        doc.text(String(val), x + boxW / 2, y + 17, { align: 'center' });
+        doc.text(String(val), x + boxW/2, y + 17, { align: 'center' });
       });
       y += 28;
 
       // Velocity
+      const velEl = document.getElementById("velVal");
+      const velCatEl = document.getElementById("velCat");
+      const velDisplay = velEl ? velEl.textContent : (d.bar_speed_estimate || '-');
+      const velCatDisplay = velCatEl ? velCatEl.textContent : (d.velocity_category || '');
       doc.setFillColor(18, 32, 64);
       doc.roundedRect(margin, y, contentW, 16, 2, 2, 'F');
       doc.setTextColor(...gold);
@@ -573,31 +565,30 @@ function exportPDF() {
       doc.setFont('helvetica', 'bold');
       doc.text('CONCENTRIC AVERAGE VELOCITY', margin + 4, y + 6);
       doc.setFontSize(15);
-      doc.text((d.bar_speed_estimate || '-') + ' m/s', margin + 4, y + 13);
+      doc.text(velDisplay + ' m/s', margin + 4, y + 13);
       doc.setTextColor(...amber);
       doc.setFontSize(8);
-      doc.text(d.velocity_category || '', margin + 55, y + 13);
+      doc.text(velCatDisplay, margin + 55, y + 13);
       y += 22;
 
-      // Verdict
+      // Verdict - read from DOM
       const vcol = d.verdict === 'Green' ? green : d.verdict === 'Red' ? red : amber;
+      const hEl = document.querySelector('#verdictEl h3');
+      const pEl = document.querySelector('#verdictEl p');
+      const editedHeadline = hEl ? hEl.innerText : (d.verdict_headline || d.verdict || '');
+      const editedSummary = pEl ? pEl.innerText : (d.summary || '');
       doc.setFillColor(20, 35, 60);
-      doc.roundedRect(margin, y, contentW, 22, 2, 2, 'F');
+      doc.roundedRect(margin, y, contentW, 26, 2, 2, 'F');
       doc.setTextColor(...vcol);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      const hEl = document.querySelector('#verdictEl h3');
-      doc.text(hEl ? hEl.innerText : (d.verdict_headline || d.verdict || ''), margin + 4, y + 8);
+      doc.text(editedHeadline.substring(0, 60), margin + 4, y + 8);
       doc.setTextColor(...white);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      const summaryEl = document.querySelector('#verdictEl p');
-      const headlineEl = document.querySelector('#verdictEl h3');
-      const editedSummary = summaryEl ? summaryEl.innerText : (d.summary || '');
-      const editedHeadline = headlineEl ? headlineEl.innerText : (d.verdict_headline || d.verdict || '');
       const summaryLines = doc.splitTextToSize(editedSummary, contentW - 8);
-      doc.text(summaryLines.slice(0, 2), margin + 4, y + 15);
-      y += 28;
+      doc.text(summaryLines.slice(0, 3), margin + 4, y + 15);
+      y += 32;
 
       // WPP Rules
       checkPage(20);
@@ -606,29 +597,30 @@ function exportPDF() {
       doc.setFont('helvetica', 'bold');
       doc.text('WORLD PARA POWERLIFTING RULE ADHERENCE', margin, y);
       y += 6;
-
-      (d.rule_adherence || []).forEach(function(r) {
-        checkPage(14);
+      const ruleDetailEls = document.querySelectorAll('#rulesList .rule-detail');
+      const rules = d.rule_adherence || [];
+      rules.forEach(function(r, idx2) {
+        checkPage(16);
+        const editedDetail = ruleDetailEls[idx2] ? ruleDetailEls[idx2].innerText : (r.detail || '');
         const sc = (r.status || '').toLowerCase();
         const col = sc === 'pass' ? green : sc === 'fail' ? red : amber;
         doc.setFillColor(20, 35, 60);
-        doc.roundedRect(margin, y, contentW, 12, 1, 1, 'F');
+        doc.roundedRect(margin, y, contentW, 13, 1, 1, 'F');
         doc.setFillColor(...col);
-        doc.roundedRect(margin + 2, y + 3, 16, 6, 1, 1, 'F');
+        doc.roundedRect(margin + 2, y + 3.5, 16, 6, 1, 1, 'F');
         doc.setTextColor(...navy);
         doc.setFontSize(6);
         doc.setFont('helvetica', 'bold');
-        doc.text((r.status || '').toUpperCase(), margin + 10, y + 7, { align: 'center' });
+        doc.text((r.status || '').toUpperCase(), margin + 10, y + 7.5, { align: 'center' });
         doc.setTextColor(...white);
         doc.setFontSize(7);
         doc.setFont('helvetica', 'bold');
-        doc.text(r.rule || '', margin + 22, y + 6);
+        doc.text((r.rule || '').substring(0, 50), margin + 22, y + 6);
         doc.setTextColor(...grey);
         doc.setFont('helvetica', 'normal');
-        const editedDetail = ruleDetailEls[idx] ? ruleDetailEls[idx].innerText : (r.detail || '');
         const detail = doc.splitTextToSize(editedDetail, contentW - 26);
-        doc.text(detail[0] || '', margin + 22, y + 10);
-        y += 14;
+        doc.text(detail[0] || '', margin + 22, y + 11);
+        y += 15;
       });
       y += 4;
 
@@ -642,7 +634,7 @@ function exportPDF() {
       const strengthEls = document.querySelectorAll('#strengthsList .editable');
       const strengthsData = strengthEls.length > 0 ? Array.from(strengthEls).map(function(el){return el.innerText;}) : (d.strengths || []);
       strengthsData.forEach(function(s) {
-        checkPage(8);
+        checkPage(10);
         doc.setTextColor(...green);
         doc.setFontSize(9);
         doc.text('+', margin, y);
@@ -650,8 +642,8 @@ function exportPDF() {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         const lines = doc.splitTextToSize(s, contentW - 8);
-        doc.text(lines[0], margin + 6, y);
-        y += 7;
+        doc.text(lines.slice(0,2), margin + 6, y);
+        y += lines.length > 1 ? 12 : 7;
       });
       y += 4;
 
@@ -665,7 +657,7 @@ function exportPDF() {
       const correctionEls = document.querySelectorAll('#correctionsList .editable');
       const correctionsData = correctionEls.length > 0 ? Array.from(correctionEls).map(function(el){return el.innerText;}) : (d.technical_corrections || []);
       correctionsData.forEach(function(c) {
-        checkPage(8);
+        checkPage(10);
         doc.setTextColor(...amber);
         doc.setFontSize(9);
         doc.text('!', margin, y);
@@ -673,12 +665,12 @@ function exportPDF() {
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
         const lines = doc.splitTextToSize(c, contentW - 8);
-        doc.text(lines[0], margin + 6, y);
-        y += 7;
+        doc.text(lines.slice(0,2), margin + 6, y);
+        y += lines.length > 1 ? 12 : 7;
       });
       y += 4;
 
-      // Coaching cues
+      // Cues
       checkPage(20);
       doc.setTextColor(...gold);
       doc.setFontSize(9);
@@ -688,42 +680,46 @@ function exportPDF() {
       const cueEls = document.querySelectorAll('#cuesList .cue-text');
       const cuesData = cueEls.length > 0 ? Array.from(cueEls).map(function(el){return el.innerText;}) : (d.coaching_cues || []);
       cuesData.forEach(function(c, i) {
-        checkPage(12);
+        checkPage(14);
         doc.setFillColor(18, 32, 64);
-        doc.roundedRect(margin, y, contentW, 10, 1, 1, 'F');
+        doc.roundedRect(margin, y, contentW, 12, 1, 1, 'F');
         doc.setTextColor(...gold);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text(String(i + 1), margin + 4, y + 7);
+        doc.text(String(i+1), margin + 4, y + 8);
         doc.setTextColor(...white);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.text(c, margin + 12, y + 7);
-        y += 12;
+        const cLines = doc.splitTextToSize(c, contentW - 16);
+        doc.text(cLines[0] || '', margin + 12, y + 8);
+        y += 14;
       });
 
       // Save
-      const dateStr = new Date().toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'}).replace(/ /g, '-');
-      const athleteSlug = (athlete || 'Athlete').replace(/\s+/g, '-');
-      const loadSlug = (load || '').replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      doc.save(athleteSlug + '-' + loadSlug + '-' + dateStr + '.pdf');
+      const dateStr = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).replace(/ /g,'-');
+      const athleteSlug = (athlete||'Athlete').replace(/\s+/g,'-');
+      const loadSlug = (load||'').replace(/[^a-zA-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+      doc.save(athleteSlug+'-'+loadSlug+'-'+dateStr+'.pdf');
 
-      btn.textContent = orig;
-      btn.disabled = false;
+      if (btn) { btn.textContent = "Export PDF Report"; btn.disabled = false; }
     } catch(err) {
       showErr('PDF error: ' + err.message);
-      btn.textContent = orig;
-      btn.disabled = false;
+      if (btn) { btn.textContent = "Export PDF Report"; btn.disabled = false; }
     }
-  };
+  }
 
-  script.onerror = function() {
-    showErr('PDF library failed to load.');
-    btn.textContent = orig;
-    btn.disabled = false;
-  };
-
-  document.head.appendChild(script);
+  if (window.jspdf) {
+    doExport();
+  } else {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    script.onload = doExport;
+    script.onerror = function() {
+      showErr('PDF library failed to load. Check internet connection.');
+      if (btn) { btn.textContent = "Export PDF Report"; btn.disabled = false; }
+    };
+    document.head.appendChild(script);
+  }
 }
 function newAnalysis() {
   clearFile();
