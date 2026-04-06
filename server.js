@@ -236,25 +236,25 @@ function buildFrameLabels(frameCount, boundaries) {
     
     // Assign label based on estimated position within lift phases
     if (estimatedTime <= liftStart + (unrack - liftStart) * 0.7) {
-      label = 'SETUP PHASE [Frame ' + (i+1) + '/' + frameCount + '] - Assess body position, bench contact, stability before lift. WPP START command readiness.';
+      label = 'SETUP PHASE - Assess body position, bench contact, stability before lift begins. WPP START command readiness. Write feedback referring to the video not frame numbers.';
     } else if (estimatedTime <= unrack + (chestTouch - unrack) * 0.3) {
-      label = 'UNRACK PHASE [Frame ' + (i+1) + '/' + frameCount + '] - Bar leaving rack hooks. Assess initial arm extension and stability.';
+      label = 'UNRACK PHASE - Bar leaving rack hooks. Assess initial arm extension and stability.';
     } else if (estimatedTime <= unrack + (chestTouch - unrack) * 0.75) {
-      label = 'DESCENT PHASE [Frame ' + (i+1) + '/' + frameCount + '] - Bar travelling toward chest. Assess bar control, path, and speed of descent.';
+      label = 'DESCENT PHASE - Bar travelling toward chest. Assess bar control, path, and speed of descent.';
     } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.15) {
-      label = 'CHEST TOUCH / PAUSE START [Frame ' + (i+1) + '/' + frameCount + '] - Bar at or near chest. CRITICAL: Assess chest contact, any bounce, and beginning of WPP pause. Bar must become completely motionless here.';
+      label = 'CHEST TOUCH / PAUSE START - Bar at or near chest. CRITICAL: Assess chest contact, any bounce, and beginning of WPP pause. Bar must become completely motionless here.';
     } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.35) {
-      label = 'MID PAUSE [Frame ' + (i+1) + '/' + frameCount + '] - Bar should be completely stationary on chest. CRITICAL for WPP: Is bar visibly motionless? Would a Head Referee be satisfied with the stillness at this point?';
+      label = 'MID PAUSE - Bar should be completely stationary on chest. CRITICAL for WPP: Is bar visibly motionless? Would a Head Referee be satisfied with the stillness at this point?';
     } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.5) {
-      label = 'PRESS INITIATION [Frame ' + (i+1) + '/' + frameCount + '] - Lifter beginning upward drive. WPP: Was the bar fully still before press began? No mandatory PRESS command needed but pause must have been complete.';
+      label = 'PRESS INITIATION - Lifter beginning upward drive. WPP: Was the bar fully still before press began? No mandatory PRESS command needed but pause must have been complete.';
     } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.7) {
-      label = 'EARLY CONCENTRIC [Frame ' + (i+1) + '/' + frameCount + '] - Bar moving upward. Assess drive off chest, any sticking point beginning, bar path.';
+      label = 'EARLY CONCENTRIC - Bar moving upward. Assess drive off chest, any sticking point beginning, bar path.';
     } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.88) {
-      label = 'MID TO LATE CONCENTRIC [Frame ' + (i+1) + '/' + frameCount + '] - Bar approaching lockout. Assess sticking point, elbow extension progress, any asymmetry.';
+      label = 'MID TO LATE CONCENTRIC - Bar approaching lockout. Assess sticking point, elbow extension progress, any asymmetry.';
     } else if (estimatedTime <= lockout + (liftEnd - lockout) * 0.3) {
-      label = 'LOCKOUT [Frame ' + (i+1) + '/' + frameCount + '] - CRITICAL: Assess full and simultaneous elbow extension. Both elbows must lock out at same time. Any lag = red light. Would referee give RACK command?';
+      label = 'LOCKOUT - CRITICAL: Assess full and simultaneous elbow extension. Both elbows must lock out at same time. Any lag = red light. Would referee give RACK command?';
     } else {
-      label = 'POST LOCKOUT / RACK [Frame ' + (i+1) + '/' + frameCount + '] - Bar being returned to rack. Assess completion of lift.';
+      label = 'POST LOCKOUT / RACK - Bar being returned to rack. Assess completion of lift.';
     }
     
     labels.push(label);
@@ -324,6 +324,13 @@ WPP RULES TO ASSESS:
 9. UNEVEN PRESSING: Both sides pressing at equal height and speed throughout.
 
 Only assess what is visible from the stated camera angle. Apply the angle limitations strictly.
+
+LANGUAGE STYLE - IMPORTANT:
+Write all feedback as if describing what is visible in the video, not referencing specific frame numbers or timestamps. 
+- NEVER say "Frame 4 shows..." or "At 3.94s..." or "frames 6-7 indicate..."
+- ALWAYS say "In the video..." or "The lift shows..." or "During the descent..." or "At chest contact..." or "Through the concentric phase..."
+- Write as a coach describing what they see, not as a technical system reporting frame data.
+- Use natural coaching language throughout — athletes and coaches should feel they are reading expert feedback, not a technical report.
 
 SPOTTER AWARENESS:
 Training videos frequently include spotters. Apply these rules strictly:
