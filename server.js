@@ -74,18 +74,33 @@ function extractSurveyFrames(videoPath, count) {
   });
 }
 
-// Extract frames at specific timestamps
-function extractFramesAtTimestamps(videoPath, timestamps) {
+// Extract exactly frameCount frames at equal intervals within a confirmed time window
+// This guarantees consistent frame count regardless of video length or boundary accuracy
+function extractFramesInWindow(videoPath, windowStart, windowEnd, frameCount) {
   return new Promise((resolve, reject) => {
     const tmpDir = os.tmpdir();
-    const frames = [];
+    
+    // Add small safety margins to ensure we stay within video bounds
+    const safeStart = Math.max(0, windowStart - 0.1);
+    const safeEnd = windowEnd + 0.1;
+    const windowDuration = safeEnd - safeStart;
+    
+    // Calculate equal interval timestamps across the window
+    const timestamps = [];
+    for (let i = 0; i < frameCount; i++) {
+      const fraction = frameCount === 1 ? 0.5 : i / (frameCount - 1);
+      const ts = safeStart + fraction * windowDuration;
+      timestamps.push(Math.max(0, ts));
+    }
+    
+    console.log('Extracting ' + frameCount + ' frames from ' + safeStart.toFixed(2) + 's to ' + safeEnd.toFixed(2) + 's');
+    console.log('Timestamps:', timestamps.map(function(t) { return t.toFixed(2); }).join(', '));
+    
+    const results = new Array(frameCount).fill(null);
     let completed = 0;
-    const results = new Array(timestamps.length).fill(null);
-
-    if (timestamps.length === 0) return resolve([]);
 
     timestamps.forEach(function(ts, idx) {
-      const filename = 'target-' + idx + '-' + Date.now() + '.png';
+      const filename = 'rlframe-' + idx + '-' + Date.now() + '.png';
       const filePath = path.join(tmpDir, filename);
 
       ffmpeg(videoPath)
@@ -97,16 +112,29 @@ function extractFramesAtTimestamps(videoPath, timestamps) {
           try {
             if (fs.existsSync(filePath)) {
               const buf = fs.readFileSync(filePath);
-              results[idx] = { base64: buf.toString('base64'), mediaType: 'image/png', timestamp: ts };
+              results[idx] = { 
+                base64: buf.toString('base64'), 
+                mediaType: 'image/png', 
+                timestamp: ts,
+                index: idx
+              };
               fs.unlinkSync(filePath);
+            } else {
+              console.log('Frame ' + idx + ' at ' + ts.toFixed(2) + 's not found, using nearest available');
             }
-          } catch(e) {}
+          } catch(e) {
+            console.log('Frame ' + idx + ' error:', e.message);
+          }
           completed++;
           if (completed === timestamps.length) {
-            resolve(results.filter(Boolean));
+            // Return all successfully extracted frames, preserving order
+            const validFrames = results.filter(Boolean);
+            console.log('Successfully extracted ' + validFrames.length + '/' + frameCount + ' frames');
+            resolve(validFrames);
           }
         })
         .on('error', function(err) {
+          console.log('Frame ' + idx + ' ffmpeg error:', err.message);
           completed++;
           if (completed === timestamps.length) {
             resolve(results.filter(Boolean));
@@ -174,77 +202,47 @@ Respond ONLY with JSON: {"lift_start_frame": N, "unrack_frame": N, "chest_touch_
   };
 }
 
-// Build targeted timestamps across the lift
-function buildTargetTimestamps(boundaries, duration) {
+// Generate descriptive labels for equal-interval frames based on position within lift
+// Boundaries are used only for labelling, not for timestamp calculation
+function buildFrameLabels(frameCount, boundaries) {
   const { liftStart, unrack, chestTouch, lockout, liftEnd } = boundaries;
+  const totalDuration = liftEnd - liftStart;
   
-  const timestamps = [];
   const labels = [];
-
-  // Setup and stability phase (2 frames)
-  timestamps.push(liftStart);
-  labels.push('Setup and bench stability - assess body position before lift begins');
   
-  const midSetup = liftStart + (unrack - liftStart) * 0.5;
-  if (midSetup > liftStart + 0.3) {
-    timestamps.push(midSetup);
-    labels.push('Pre-unrack position - assess stability and readiness');
+  for (let i = 0; i < frameCount; i++) {
+    const fraction = frameCount === 1 ? 0.5 : i / (frameCount - 1);
+    const estimatedTime = liftStart + fraction * totalDuration;
+    
+    let label;
+    
+    // Assign label based on estimated position within lift phases
+    if (estimatedTime <= liftStart + (unrack - liftStart) * 0.7) {
+      label = 'SETUP PHASE [Frame ' + (i+1) + '/' + frameCount + '] - Assess body position, bench contact, stability before lift. WPP START command readiness.';
+    } else if (estimatedTime <= unrack + (chestTouch - unrack) * 0.3) {
+      label = 'UNRACK PHASE [Frame ' + (i+1) + '/' + frameCount + '] - Bar leaving rack hooks. Assess initial arm extension and stability.';
+    } else if (estimatedTime <= unrack + (chestTouch - unrack) * 0.75) {
+      label = 'DESCENT PHASE [Frame ' + (i+1) + '/' + frameCount + '] - Bar travelling toward chest. Assess bar control, path, and speed of descent.';
+    } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.15) {
+      label = 'CHEST TOUCH / PAUSE START [Frame ' + (i+1) + '/' + frameCount + '] - Bar at or near chest. CRITICAL: Assess chest contact, any bounce, and beginning of WPP pause. Bar must become completely motionless here.';
+    } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.35) {
+      label = 'MID PAUSE [Frame ' + (i+1) + '/' + frameCount + '] - Bar should be completely stationary on chest. CRITICAL for WPP: Is bar visibly motionless? Would a Head Referee be satisfied with the stillness at this point?';
+    } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.5) {
+      label = 'PRESS INITIATION [Frame ' + (i+1) + '/' + frameCount + '] - Lifter beginning upward drive. WPP: Was the bar fully still before press began? No mandatory PRESS command needed but pause must have been complete.';
+    } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.7) {
+      label = 'EARLY CONCENTRIC [Frame ' + (i+1) + '/' + frameCount + '] - Bar moving upward. Assess drive off chest, any sticking point beginning, bar path.';
+    } else if (estimatedTime <= chestTouch + (lockout - chestTouch) * 0.88) {
+      label = 'MID TO LATE CONCENTRIC [Frame ' + (i+1) + '/' + frameCount + '] - Bar approaching lockout. Assess sticking point, elbow extension progress, any asymmetry.';
+    } else if (estimatedTime <= lockout + (liftEnd - lockout) * 0.3) {
+      label = 'LOCKOUT [Frame ' + (i+1) + '/' + frameCount + '] - CRITICAL: Assess full and simultaneous elbow extension. Both elbows must lock out at same time. Any lag = red light. Would referee give RACK command?';
+    } else {
+      label = 'POST LOCKOUT / RACK [Frame ' + (i+1) + '/' + frameCount + '] - Bar being returned to rack. Assess completion of lift.';
+    }
+    
+    labels.push(label);
   }
-
-  // Unrack
-  timestamps.push(unrack);
-  labels.push('Unrack - bar leaving rack hooks, arms extended');
-
-  // Descent phase (2 frames)
-  const descent1 = unrack + (chestTouch - unrack) * 0.4;
-  timestamps.push(descent1);
-  labels.push('Mid descent - assess bar control and path');
-
-  const descent2 = unrack + (chestTouch - unrack) * 0.85;
-  timestamps.push(descent2);
-  labels.push('Near chest - assess bar path and approach to chest');
-
-  // Chest touch and pause (3 frames - critical for rule assessment)
-  timestamps.push(chestTouch);
-  labels.push('CHEST TOUCH - bar contact with chest/sternum. Assess for bounce. This is where the WPP pause begins - bar must become completely motionless.');
-
-  const pauseMid = chestTouch + 0.4;
-  if (pauseMid < lockout - 0.2) {
-    timestamps.push(pauseMid);
-    labels.push('MID PAUSE - bar should be completely motionless. Assess stillness. Is the bar visibly stationary? WPP requires a visible motionless pause - no PRESS command needed but pause must satisfy the Head Referee.');
-  }
-
-  const pauseEnd = chestTouch + 0.8;
-  if (pauseEnd < lockout - 0.1) {
-    timestamps.push(pauseEnd);
-    labels.push('PRESS INITIATION - moment lifter begins press. Was the preceding pause sufficiently motionless and long enough to satisfy a WPP Head Referee? Lifter does not need to wait for a referee PRESS command under WPP rules.');
-  }
-
-  // Concentric phase (3 frames - for velocity and rule assessment)
-  const press1 = chestTouch + (lockout - chestTouch) * 0.25;
-  timestamps.push(press1);
-  labels.push('Early concentric - assess initial drive and bar path off chest');
-
-  const press2 = chestTouch + (lockout - chestTouch) * 0.55;
-  timestamps.push(press2);
-  labels.push('Mid concentric - assess sticking point and bar path');
-
-  const press3 = chestTouch + (lockout - chestTouch) * 0.85;
-  timestamps.push(press3);
-  labels.push('Near lockout - assess elbow extension progress and symmetry');
-
-  // Lockout (critical)
-  timestamps.push(lockout);
-  labels.push('LOCKOUT - full elbow extension. Assess simultaneous lockout and completeness. Would referee give RACK command here?');
-
-  // Post lockout / rack (1 frame)
-  const postLockout = lockout + (liftEnd - lockout) * 0.5;
-  if (postLockout < liftEnd - 0.2) {
-    timestamps.push(postLockout);
-    labels.push('Post lockout / rack - assess bar return and lift completion');
-  }
-
-  return { timestamps, labels };
+  
+  return labels;
 }
 
 function buildAngleGuidance(angle) {
@@ -403,12 +401,15 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
     const boundaries = await detectLiftBoundaries(surveyFrames, duration);
     console.log('Boundaries detected:', JSON.stringify(boundaries));
 
-    // Build targeted timestamps
-    const { timestamps, labels } = buildTargetTimestamps(boundaries, duration);
-    console.log('Extracting ' + timestamps.length + ' targeted frames...');
-
-    // Pass 2: Extract targeted frames
-    const targetedFrames = await extractFramesAtTimestamps(req.file.path, timestamps);
+    // Pass 2: Extract exactly 12 frames at equal intervals within confirmed lift window
+    // Use a slightly padded window to ensure we capture full lift including lockout
+    const windowStart = Math.max(0, boundaries.liftStart);
+    const windowEnd = Math.min(duration, boundaries.liftEnd + 0.5); // Add 0.5s buffer to catch lockout
+    const frameCount = 12;
+    
+    console.log('Extracting ' + frameCount + ' equal-interval frames from ' + windowStart.toFixed(2) + 's to ' + windowEnd.toFixed(2) + 's');
+    
+    const targetedFrames = await extractFramesInWindow(req.file.path, windowStart, windowEnd, frameCount);
 
     // Clean up video file
     try { fs.unlinkSync(req.file.path); } catch(e) {}
@@ -417,13 +418,16 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
       return res.status(400).json({ error: 'Could not extract frames from video' });
     }
 
+    // Generate labels based on frame positions within lift phases
+    const labels = buildFrameLabels(targetedFrames.length, boundaries);
+    
     // Label frames
     const labelledFrames = targetedFrames.map(function(frame, i) {
       return {
         base64: frame.base64,
         mediaType: frame.mediaType,
         timestamp: frame.timestamp,
-        label: labels[i] || ('Frame ' + (i + 1))
+        label: labels[i] || ('Frame ' + (i + 1) + '/' + targetedFrames.length)
       };
     });
 
