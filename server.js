@@ -309,6 +309,13 @@ WPP RULES TO ASSESS:
 
 Only assess what is visible from the stated camera angle. Apply the angle limitations strictly.
 
+SPOTTER AWARENESS - CRITICAL:
+Training videos frequently include spotters standing beside or behind the athlete. You must:
+1. IGNORE the spotter entirely when assessing technique, body position, bar path, and rule adherence. A spotter's hands, arms, or body near the bar or athlete does not constitute a rule violation.
+2. DETECT spotter engagement - if a spotter appears to be touching the bar, plates, or athlete during the lift, add a WARNING note in the summary stating: "Spotter contact detected during this lift. This may have affected bar path, velocity readings, or lockout assessment. Results should be interpreted with caution."
+3. DISTINGUISH between a passive spotter (hands near but not touching) and active spotter engagement (hands on bar or athlete). Only flag active engagement.
+4. Do NOT penalise the athlete for spotter presence in the frame. Only assess what the athlete themselves is doing.
+
 Respond ONLY with valid JSON:
 {
   "overall_score": 0-100,
