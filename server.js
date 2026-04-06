@@ -74,75 +74,93 @@ function extractSurveyFrames(videoPath, count) {
   });
 }
 
-// Extract exactly frameCount frames at equal intervals within a confirmed time window
-// This guarantees consistent frame count regardless of video length or boundary accuracy
-function extractFramesInWindow(videoPath, windowStart, windowEnd, frameCount) {
-  return new Promise((resolve, reject) => {
-    const tmpDir = os.tmpdir();
+// Extract exactly frameCount frames sequentially at equal intervals within a confirmed window
+// Sequential extraction avoids race conditions and guarantees consistent frame count
+async function extractFramesInWindow(videoPath, windowStart, windowEnd, frameCount) {
+  const tmpDir = os.tmpdir();
+  
+  // Add small safety margins
+  const safeStart = Math.max(0, windowStart - 0.1);
+  const safeEnd = windowEnd + 0.3;
+  const windowDuration = safeEnd - safeStart;
+  
+  // Calculate equal interval timestamps
+  const timestamps = [];
+  for (let i = 0; i < frameCount; i++) {
+    const fraction = frameCount === 1 ? 0.5 : i / (frameCount - 1);
+    const ts = safeStart + fraction * windowDuration;
+    timestamps.push(Math.max(0, ts));
+  }
+  
+  console.log('Extracting ' + frameCount + ' frames sequentially from ' + safeStart.toFixed(2) + 's to ' + safeEnd.toFixed(2) + 's');
+  console.log('Timestamps:', timestamps.map(function(t) { return t.toFixed(2); }).join(', '));
+  
+  const frames = [];
+  
+  for (let i = 0; i < timestamps.length; i++) {
+    const ts = timestamps[i];
+    const filename = 'rlframe-' + i + '-' + Date.now() + '.png';
+    const filePath = path.join(tmpDir, filename);
     
-    // Add small safety margins to ensure we stay within video bounds
-    const safeStart = Math.max(0, windowStart - 0.1);
-    const safeEnd = windowEnd + 0.1;
-    const windowDuration = safeEnd - safeStart;
-    
-    // Calculate equal interval timestamps across the window
-    const timestamps = [];
-    for (let i = 0; i < frameCount; i++) {
-      const fraction = frameCount === 1 ? 0.5 : i / (frameCount - 1);
-      const ts = safeStart + fraction * windowDuration;
-      timestamps.push(Math.max(0, ts));
+    try {
+      await new Promise(function(resolve, reject) {
+        ffmpeg(videoPath)
+          .seekInput(ts)
+          .frames(1)
+          .output(filePath)
+          .size('640x?')
+          .on('end', resolve)
+          .on('error', reject)
+          .run();
+      });
+      
+      if (fs.existsSync(filePath)) {
+        const buf = fs.readFileSync(filePath);
+        frames.push({
+          base64: buf.toString('base64'),
+          mediaType: 'image/png',
+          timestamp: ts,
+          index: i
+        });
+        fs.unlinkSync(filePath);
+        console.log('Frame ' + (i+1) + '/' + frameCount + ' extracted at ' + ts.toFixed(2) + 's');
+      }
+    } catch(err) {
+      console.log('Frame ' + (i+1) + ' failed at ' + ts.toFixed(2) + 's:', err.message);
+      // Try with a slightly adjusted timestamp
+      const adjustedTs = Math.max(0, ts - 0.1);
+      try {
+        const filename2 = 'rlframe-retry-' + i + '-' + Date.now() + '.png';
+        const filePath2 = path.join(tmpDir, filename2);
+        await new Promise(function(resolve, reject) {
+          ffmpeg(videoPath)
+            .seekInput(adjustedTs)
+            .frames(1)
+            .output(filePath2)
+            .size('640x?')
+            .on('end', resolve)
+            .on('error', reject)
+            .run();
+        });
+        if (fs.existsSync(filePath2)) {
+          const buf = fs.readFileSync(filePath2);
+          frames.push({
+            base64: buf.toString('base64'),
+            mediaType: 'image/png',
+            timestamp: adjustedTs,
+            index: i
+          });
+          fs.unlinkSync(filePath2);
+          console.log('Frame ' + (i+1) + ' extracted on retry at ' + adjustedTs.toFixed(2) + 's');
+        }
+      } catch(err2) {
+        console.log('Frame ' + (i+1) + ' failed on retry too:', err2.message);
+      }
     }
-    
-    console.log('Extracting ' + frameCount + ' frames from ' + safeStart.toFixed(2) + 's to ' + safeEnd.toFixed(2) + 's');
-    console.log('Timestamps:', timestamps.map(function(t) { return t.toFixed(2); }).join(', '));
-    
-    const results = new Array(frameCount).fill(null);
-    let completed = 0;
-
-    timestamps.forEach(function(ts, idx) {
-      const filename = 'rlframe-' + idx + '-' + Date.now() + '.png';
-      const filePath = path.join(tmpDir, filename);
-
-      ffmpeg(videoPath)
-        .seekInput(ts)
-        .frames(1)
-        .output(filePath)
-        .size('640x?')
-        .on('end', function() {
-          try {
-            if (fs.existsSync(filePath)) {
-              const buf = fs.readFileSync(filePath);
-              results[idx] = { 
-                base64: buf.toString('base64'), 
-                mediaType: 'image/png', 
-                timestamp: ts,
-                index: idx
-              };
-              fs.unlinkSync(filePath);
-            } else {
-              console.log('Frame ' + idx + ' at ' + ts.toFixed(2) + 's not found, using nearest available');
-            }
-          } catch(e) {
-            console.log('Frame ' + idx + ' error:', e.message);
-          }
-          completed++;
-          if (completed === timestamps.length) {
-            // Return all successfully extracted frames, preserving order
-            const validFrames = results.filter(Boolean);
-            console.log('Successfully extracted ' + validFrames.length + '/' + frameCount + ' frames');
-            resolve(validFrames);
-          }
-        })
-        .on('error', function(err) {
-          console.log('Frame ' + idx + ' ffmpeg error:', err.message);
-          completed++;
-          if (completed === timestamps.length) {
-            resolve(results.filter(Boolean));
-          }
-        })
-        .run();
-    });
-  });
+  }
+  
+  console.log('Successfully extracted ' + frames.length + '/' + frameCount + ' frames');
+  return frames;
 }
 
 // Pass 1: Detect lift start and end using survey frames
@@ -307,12 +325,14 @@ WPP RULES TO ASSESS:
 
 Only assess what is visible from the stated camera angle. Apply the angle limitations strictly.
 
-SPOTTER AWARENESS - CRITICAL:
-Training videos frequently include spotters standing beside or behind the athlete. You must:
-1. IGNORE the spotter entirely when assessing technique, body position, bar path, and rule adherence. A spotter's hands, arms, or body near the bar or athlete does not constitute a rule violation.
-2. DETECT spotter engagement - if a spotter appears to be touching the bar, plates, or athlete during the lift, add a WARNING note in the summary stating: "Spotter contact detected during this lift. This may have affected bar path, velocity readings, or lockout assessment. Results should be interpreted with caution."
-3. DISTINGUISH between a passive spotter (hands near but not touching) and active spotter engagement (hands on bar or athlete). Only flag active engagement.
-4. Do NOT penalise the athlete for spotter presence in the frame. Only assess what the athlete themselves is doing.
+SPOTTER AWARENESS:
+Training videos frequently include spotters. Apply these rules strictly:
+1. COMPLETELY IGNORE the spotter during setup, unrack, descent, and rack phases. A spotter assisting the unrack or standing nearby is completely normal and must never be mentioned or flagged.
+2. ONLY flag spotter contact if there is clear visual evidence of the spotter's hands making contact with the bar or plates specifically during the CONCENTRIC PRESS phase (from chest touch upward). This would suggest the athlete may have received physical assistance during the press itself.
+3. If you flag spotter contact during the press, state it once briefly in the summary only. Do not repeat it across multiple rule sections.
+4. Do NOT flag spotter proximity, hands near the bar, or hands during pause phase. Only flag definitive contact during the upward press movement.
+5. Never describe the lift as potentially invalid due to spotter presence unless hands are clearly on the bar during the concentric phase with obvious upward force.
+6. Do NOT penalise scores for spotter presence at any phase.
 
 Respond ONLY with valid JSON:
 {
