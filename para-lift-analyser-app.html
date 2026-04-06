@@ -433,16 +433,11 @@ function renderResults(d,meta,athlete,sessionType,load) {
 
   const velRaw=d.bar_speed_estimate||"-"; const velNumMatch=String(velRaw).match(/(\d+\.?\d*)/); const vel=velNumMatch?velNumMatch[1]:"-";
   document.getElementById("velVal").textContent=vel;
-  document.getElementById("velCat").textContent=d.velocity_category||"";
   const vn=parseFloat(vel);
-  let vt="";
-  if(!isNaN(vn)){
-    if(vn>=0.8)vt="Maximal intent - excellent power expression";
-    else if(vn>=0.5)vt="Strength zone - solid velocity for the load";
-    else if(vn>=0.3)vt="Grind - consider load management or intent cues";
-    else vt="Very slow - review load, fatigue, or technique";
-  }
-  document.getElementById("velNote").textContent=vt;
+  let cat="";
+  if(!isNaN(vn)){if(vn>=0.8)cat="Maximal (>0.8m/s)";else if(vn>=0.5)cat="Strength (0.5-0.8m/s)";else cat="Grind (<0.5m/s)";}
+  document.getElementById("velCat").textContent=cat;
+  document.getElementById("velNote").textContent="";
 
   const vcls={Green:"green",Amber:"amber",Red:"red"};
   const vico={Green:"[GOOD]",Amber:"[WARNING]",Red:"[RED LIGHT]"};
