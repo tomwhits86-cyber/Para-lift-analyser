@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="RefLight — AI-powered para powerlifting video analysis. Know your whites before your lights. In-depth referee outcome prediction before you compete.">
+<title>RefLight — Know Your Whites Before Your Lights</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0a1628;
+  --navy-mid: #122040;
+  --navy-light: #1a2d50;
+  --gold: #c9a84c;
+  --gold-bright: #f0c040;
+  --gold-dim: #7a6030;
+  --gold-pale: rgba(201,168,76,0.12);
+  --white: #f4f6fa;
+  --grey: #8a9ab8;
+  --grey-light: #c8d4e8;
+  --green: #2ecc7a;
+  --amber: #f0a830;
+  --red: #e84040;
+  --card: rgba(255,255,255,0.04);
+  --card-border: rgba(201,168,76,0.18);
+  --radius: 14px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--navy);
+  color: var(--white);
+  font-family: 'Barlow', sans-serif;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ── LAYOUT ── */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(10,22,40,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--card-border);
+  padding: 14px 0;
+}
+.nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.logo-block { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.logo-mark {
+  width: 36px; height: 36px;
+  background: var(--gold);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900; font-size: 11px;
+  color: var(--navy);
+}
+.logo-text .org {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px; font-weight: 600;
+  letter-spacing: 2.5px; color: var(--gold);
+  text-transform: uppercase; line-height: 1;
+}
+.logo-text .tool {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--white); text-transform: uppercase; line-height: 1;
+}
+.nav-cta {
+  display: flex; align-items: center; gap: 16px;
+}
+.nav-link {
+  font-size: 13px; font-weight: 500;
+  color: var(--grey-light);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-link:hover { color: var(--gold); }
+.btn-nav {
+  background: var(--gold);
+  color: var(--navy);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 9px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn-nav:hover { background: var(--gold-bright); transform: translateY(-1px); }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 120px 0 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Diagonal gold accent */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px; right: -300px;
+  width: 800px; height: 800px;
+  background: radial-gradient(ellipse, rgba(201,168,76,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -100px; left: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+  opacity: 0; animation: fadeUp 0.6s 0.1s forwards;
+}
+.hero-eyebrow::before {
+  content: '';
+  width: 32px; height: 1px;
+  background: var(--gold);
+}
+
+.hero-headline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(52px, 8vw, 96px);
+  font-weight: 900;
+  line-height: 0.95;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  margin-bottom: 24px;
+  opacity: 0; animation: fadeUp 0.6s 0.2s forwards;
+}
+.hero-headline .line-gold { color: var(--gold); display: block; }
+.hero-headline .line-white { color: var(--white); display: block; }
+
+.hero-sub {
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--grey-light);
+  max-width: 520px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  opacity: 0; animation: fadeUp 0.6s 0.35s forwards;
+}
+.hero-sub strong { color: var(--white); font-weight: 600; }
+
+.hero-actions {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  opacity: 0; animation: fadeUp 0.6s 0.5s forwards;
+}
+.btn-primary {
+  background: var(--gold);
+  color: var(--navy);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  padding: 16px 36px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  border: none; cursor: pointer;
+  transition: all 0.2s;
+  display: inline-block;
+}
+.btn-primary:hover { background: var(--gold-bright); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(201,168,76,0.3); }
+.btn-secondary {
+  background: transparent;
+  color: var(--grey-light);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 16px 28px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  border: 1px solid var(--card-border);
+  transition: all 0.2s;
+  display: inline-block;
+}
+.btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+
+.hero-trust {
+  margin-top: 60px;
+  display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+  opacity: 0; animation: fadeUp 0.6s 0.65s forwards;
+}
+.trust-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--grey);
+  font-weight: 500; letter-spacing: 0.5px;
+}
+.trust-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
+
+/* Floating mock result card */
+.hero-visual {
+  position: absolute;
+  right: -20px; top: 50%;
+  transform: translateY(-50%);
+  width: 340px;
+  opacity: 0; animation: fadeLeft 0.8s 0.6s forwards;
+}
+@media (max-width: 900px) {
+  .hero-visual { display: none; }
+  .hero-headline { font-size: clamp(44px, 10vw, 72px); }
+}
+
+.mock-card {
+  background: var(--navy-mid);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative;
+}
+.mock-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius) + 1px);
+  background: linear-gradient(135deg, rgba(201,168,76,0.3), transparent 60%);
+  z-index: -1;
+}
+.mock-header {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--white); margin-bottom: 2px;
+}
+.mock-header span { color: var(--gold); }
+.mock-meta { font-size: 10px; color: var(--grey); margin-bottom: 16px; }
+.mock-scores {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 14px;
+}
+.mock-score {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 8px; padding: 8px 4px; text-align: center;
+}
+.mock-score-lbl { font-size: 7px; color: var(--grey); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+.mock-score-val { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 900; }
+.mock-score-val.g { color: var(--green); }
+.mock-score-val.a { color: var(--amber); }
+.mock-vel {
+  background: var(--navy-light);
+  border: 1px solid var(--gold-dim);
+  border-radius: 10px; padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.mock-vel-num { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 900; color: var(--gold); }
+.mock-vel-lbl { font-size: 8px; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+.mock-vel-cat { font-size: 10px; color: var(--amber); font-weight: 600; }
+.mock-verdict {
+  background: rgba(240,168,48,0.08);
+  border: 1px solid rgba(240,168,48,0.25);
+  border-radius: 10px; padding: 10px 12px;
+  margin-bottom: 12px;
+}
+.mock-verdict-head {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 700;
+  color: var(--amber); margin-bottom: 3px;
+}
+.mock-verdict-body { font-size: 9px; color: var(--grey-light); line-height: 1.4; }
+.mock-rules { display: flex; flex-direction: column; gap: 4px; }
+.mock-rule {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 9px;
+}
+.mock-rule:last-child { border-bottom: none; }
+.mock-badge {
+  font-size: 7px; font-weight: 700; letter-spacing: 1px;
+  padding: 2px 5px; border-radius: 3px; flex-shrink: 0;
+  text-transform: uppercase;
+}
+.mock-badge.p { background: rgba(46,204,122,0.15); color: var(--green); border: 1px solid rgba(46,204,122,0.3); }
+.mock-badge.w { background: rgba(240,168,48,0.15); color: var(--amber); border: 1px solid rgba(240,168,48,0.3); }
+.mock-rule-name { color: var(--grey-light); font-weight: 500; }
+
+/* ── HOW IT WORKS ── */
+.section { padding: 100px 0; }
+.section-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--gold); }
+.section-headline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(36px, 5vw, 54px);
+  font-weight: 900; text-transform: uppercase;
+  letter-spacing: -0.5px; line-height: 1;
+  margin-bottom: 16px;
+}
+.section-sub {
+  font-size: 16px; color: var(--grey-light);
+  max-width: 560px; line-height: 1.7;
+  margin-bottom: 60px;
+}
+
+.steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; }
+@media (max-width: 700px) { .steps { grid-template-columns: 1fr; } }
+
+.step {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s, transform 0.3s;
+}
+.step:hover { border-color: var(--gold); transform: translateY(-4px); }
+.step::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--gold), transparent);
+}
+.step-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 64px; font-weight: 900;
+  color: rgba(201,168,76,0.1);
+  line-height: 1;
+  margin-bottom: 12px;
+  letter-spacing: -2px;
+}
+.step-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--white); margin-bottom: 10px;
+}
+.step-body { font-size: 14px; color: var(--grey-light); line-height: 1.6; }
+
+/* ── FEATURES ── */
+.features-section { padding: 100px 0; background: rgba(255,255,255,0.015); border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
+
+.features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+@media (max-width: 760px) { .features-grid { grid-template-columns: 1fr; } }
+
+.features-list { display: flex; flex-direction: column; gap: 16px; }
+.feature-item {
+  display: flex; gap: 16px;
+  padding: 18px 20px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  transition: border-color 0.2s;
+}
+.feature-item:hover { border-color: rgba(201,168,76,0.4); }
+.feature-icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  background: var(--gold-pale);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.feature-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--white); margin-bottom: 4px;
+}
+.feature-body { font-size: 13px; color: var(--grey-light); line-height: 1.5; }
+
+.rules-visual {
+  background: var(--navy-mid);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 24px;
+  position: sticky; top: 100px;
+}
+.rules-visual-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 16px;
+}
+.rules-visual-list { display: flex; flex-direction: column; gap: 8px; }
+.rule-visual-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.rvr-badge {
+  font-size: 8px; font-weight: 700; letter-spacing: 1px;
+  padding: 2px 6px; border-radius: 3px; flex-shrink: 0;
+  text-transform: uppercase; min-width: 52px; text-align: center;
+}
+.rvr-badge.pass { background: rgba(46,204,122,0.15); color: var(--green); border: 1px solid rgba(46,204,122,0.3); }
+.rvr-badge.warn { background: rgba(240,168,48,0.15); color: var(--amber); border: 1px solid rgba(240,168,48,0.3); }
+.rvr-badge.fail { background: rgba(232,64,64,0.15); color: var(--red); border: 1px solid rgba(232,64,64,0.3); }
+.rvr-name { color: var(--grey-light); font-weight: 500; }
+
+/* ── PRICING ── */
+.pricing-section { padding: 100px 0; }
+.pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 60px; }
+@media (max-width: 760px) { .pricing-grid { grid-template-columns: 1fr; } }
+
+.price-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  position: relative;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.price-card:hover { transform: translateY(-4px); }
+.price-card.featured {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.05);
+}
+.price-card.featured::before {
+  content: 'MOST POPULAR';
+  position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+  background: var(--gold); color: var(--navy);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  padding: 3px 12px; border-radius: 20px;
+  white-space: nowrap;
+}
+.price-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 12px;
+}
+.price-amount {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 54px; font-weight: 900;
+  color: var(--white); line-height: 1;
+  margin-bottom: 4px;
+}
+.price-amount sup { font-size: 24px; vertical-align: top; margin-top: 8px; }
+.price-per { font-size: 13px; color: var(--grey); margin-bottom: 6px; }
+.price-analyses {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--gold-bright); margin-bottom: 24px;
+}
+.price-divider { border: none; border-top: 1px solid var(--card-border); margin-bottom: 20px; }
+.price-features { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+.price-feature {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--grey-light);
+}
+.price-feature::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+.price-cta {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s;
+  border: none; text-decoration: none;
+  display: block; text-align: center;
+}
+.price-cta.gold { background: var(--gold); color: var(--navy); }
+.price-cta.gold:hover { background: var(--gold-bright); transform: translateY(-1px); }
+.price-cta.outline { background: transparent; color: var(--grey-light); border: 1px solid var(--card-border); }
+.price-cta.outline:hover { border-color: var(--gold); color: var(--gold); }
+
+.price-note {
+  text-align: center; margin-top: 24px;
+  font-size: 13px; color: var(--grey);
+  line-height: 1.6;
+}
+
+/* ── WHO IT'S FOR ── */
+.who-section { padding: 100px 0; border-top: 1px solid var(--card-border); }
+.who-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 50px; }
+@media (max-width: 700px) { .who-grid { grid-template-columns: 1fr; } }
+
+.who-card {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  transition: border-color 0.2s;
+}
+.who-card:hover { border-color: rgba(201,168,76,0.4); }
+.who-icon { font-size: 32px; margin-bottom: 14px; }
+.who-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--white); margin-bottom: 10px;
+}
+.who-body { font-size: 14px; color: var(--grey-light); line-height: 1.7; }
+
+/* ── FAQ ── */
+.faq-section { padding: 100px 0; }
+.faq-list { max-width: 720px; margin: 50px auto 0; display: flex; flex-direction: column; gap: 12px; }
+.faq-item {
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.faq-q {
+  padding: 18px 20px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px; font-weight: 700;
+  color: var(--white);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  user-select: none;
+  transition: color 0.2s;
+}
+.faq-q:hover { color: var(--gold); }
+.faq-q .faq-icon { font-size: 20px; color: var(--gold); flex-shrink: 0; transition: transform 0.3s; }
+.faq-item.open .faq-icon { transform: rotate(45deg); }
+.faq-a {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.35s ease, padding 0.35s;
+  padding: 0 20px;
+  font-size: 14px; color: var(--grey-light); line-height: 1.7;
+}
+.faq-item.open .faq-a { max-height: 300px; padding: 0 20px 18px; }
+
+/* ── CTA BANNER ── */
+.cta-section {
+  padding: 100px 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cta-section::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 700px; height: 400px;
+  background: radial-gradient(ellipse, rgba(201,168,76,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cta-headline {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 900; text-transform: uppercase;
+  letter-spacing: -0.5px; line-height: 1;
+  margin-bottom: 16px;
+}
+.cta-headline span { color: var(--gold); }
+.cta-sub { font-size: 16px; color: var(--grey-light); margin-bottom: 36px; }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--card-border);
+  padding: 40px 0;
+}
+.footer-inner {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+}
+.footer-copy { font-size: 12px; color: var(--grey); }
+.footer-links { display: flex; gap: 20px; }
+.footer-link { font-size: 12px; color: var(--grey); text-decoration: none; transition: color 0.2s; }
+.footer-link:hover { color: var(--gold); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeLeft {
+  from { opacity: 0; transform: translateY(-50%) translateX(40px); }
+  to { opacity: 1; transform: translateY(-50%) translateX(0); }
+}
+
+.reveal {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── STRIPE MODAL ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,22,40,0.92);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--navy-mid);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 36px;
+  max-width: 460px; width: 100%;
+  position: relative;
+}
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  background: none; border: none;
+  color: var(--grey); font-size: 22px; cursor: pointer;
+  transition: color 0.2s;
+}
+.modal-close:hover { color: var(--white); }
+.modal-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 700;
+  text-transform: uppercase; color: var(--white);
+  margin-bottom: 4px;
+}
+.modal-subtitle { font-size: 13px; color: var(--grey); margin-bottom: 28px; }
+.modal-pack-summary {
+  background: rgba(201,168,76,0.08);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 14px 16px; margin-bottom: 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-pack-name { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); }
+.modal-pack-price { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 900; color: var(--gold); }
+.modal-field { margin-bottom: 16px; }
+.modal-label { font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; display: block; }
+.modal-input {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  color: var(--white);
+  font-family: 'Barlow', sans-serif;
+  font-size: 15px; padding: 12px 14px;
+  outline: none; transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: var(--gold); }
+.modal-submit {
+  width: 100%; padding: 16px;
+  background: var(--gold); color: var(--navy);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  border: none; border-radius: var(--radius);
+  cursor: pointer; transition: all 0.2s;
+  margin-top: 8px;
+}
+.modal-submit:hover { background: var(--gold-bright); }
+.modal-note { font-size: 11px; color: var(--grey); text-align: center; margin-top: 12px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo-block">
+      <div class="logo-mark">RL</div>
+      <div class="logo-text">
+        <div class="org">RefLight</div>
+        <div class="tool">Lift Analyser</div>
+      </div>
+    </a>
+    <div class="nav-cta">
+      <a href="#how-it-works" class="nav-link">How it works</a>
+      <a href="#pricing" class="nav-link">Pricing</a>
+      <a href="para-lift-analyser-app.html" class="btn-nav">Open App →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Para Powerlifting · AI Analysis · WPP Rules</div>
+    <h1 class="hero-headline">
+      <span class="line-white">Know your whites</span>
+      <span class="line-gold">before your lights.</span>
+    </h1>
+    <p class="hero-sub">
+      Upload a training video. Get <strong>in-depth referee outcome prediction</strong> before you compete — scored against World Para Powerlifting rules, with coaching cues you can use the same session.
+    </p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">Get Started</a>
+      <a href="para-lift-analyser-app.html" class="btn-secondary">Open App →</a>
+    </div>
+    <div class="hero-trust">
+      <div class="trust-item"><div class="trust-dot"></div>WPP Rule Adherence</div>
+      <div class="trust-item"><div class="trust-dot"></div>7-Point Rule Assessment</div>
+      <div class="trust-item"><div class="trust-dot"></div>Referee Outcome Prediction</div>
+      <div class="trust-item"><div class="trust-dot"></div>Instant PDF Report</div>
+    </div>
+  </div>
+
+  <!-- Floating mock card -->
+  <div class="hero-visual">
+    <div class="mock-card">
+      <div class="mock-header">Analysis — <span>Athlete Name</span></div>
+      <div class="mock-meta">Competition Prep · 120kg · 55 class · Mon 6 Apr 2026</div>
+      <div class="mock-scores">
+        <div class="mock-score"><div class="mock-score-lbl">Overall</div><div class="mock-score-val a">78</div></div>
+        <div class="mock-score"><div class="mock-score-lbl">Setup</div><div class="mock-score-val g">85</div></div>
+        <div class="mock-score"><div class="mock-score-lbl">Pause</div><div class="mock-score-val a">72</div></div>
+        <div class="mock-score"><div class="mock-score-lbl">Press</div><div class="mock-score-val a">75</div></div>
+      </div>
+      <div class="mock-vel">
+        <div>⚡</div>
+        <div>
+          <div class="mock-vel-lbl">AI Velocity Estimate</div>
+          <div class="mock-vel-num">0.38 <span style="font-size:12px;color:var(--grey)">m/s</span></div>
+          <div class="mock-vel-cat">Maximal Effort</div>
+        </div>
+      </div>
+      <div class="mock-verdict">
+        <div class="mock-verdict-head">[WARNING] Likely white — pause borderline</div>
+        <div class="mock-verdict-body">Solid lift overall. Pause stillness is the primary referee risk — hold it visibly longer in training.</div>
+      </div>
+      <div class="mock-rules">
+        <div class="mock-rule"><span class="mock-badge p">Pass</span><span class="mock-rule-name">Start Position and Stability</span></div>
+        <div class="mock-rule"><span class="mock-badge p">Pass</span><span class="mock-rule-name">Descent and Chest Touch</span></div>
+        <div class="mock-rule"><span class="mock-badge w">Warning</span><span class="mock-rule-name">Pause Quality</span></div>
+        <div class="mock-rule"><span class="mock-badge w">Warning</span><span class="mock-rule-name">Elbow Lockout — Simultaneous</span></div>
+        <div class="mock-rule"><span class="mock-badge p">Pass</span><span class="mock-rule-name">Bar Path and Steering</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="section-eyebrow">How it works</div>
+    <h2 class="section-headline">Three steps to<br>competition confidence</h2>
+    <p class="section-sub">No wearables. No setup. Film your lift, upload the video, and get your report in under two minutes.</p>
+    <div class="steps reveal">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Film Your Lift</div>
+        <div class="step-body">Record a single rep on any smartphone. Use the 45-degree referee angle for the most accurate rule adherence assessment — the same view a head referee uses in competition.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Upload & Analyse</div>
+        <div class="step-body">Upload directly in the RefLight app. Our AI extracts key frames, detects the lift boundaries, and assesses every moment against the official WPP technical rulebook.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Act on the Feedback</div>
+        <div class="step-body">Get an overall score, a 7-rule adherence breakdown, technical corrections, and three coaching cues — ready to use the same session. Export a branded PDF to share with your coach.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section">
+  <div class="container">
+    <div class="features-grid">
+      <div>
+        <div class="section-eyebrow">What you get</div>
+        <h2 class="section-headline">Built for<br>competitive lifters</h2>
+        <p class="section-sub" style="margin-bottom:32px;">Every feature is designed around one question: would a WPP referee give this lift white lights?</p>
+        <div class="features-list reveal">
+          <div class="feature-item">
+            <div class="feature-icon">🏋️</div>
+            <div>
+              <div class="feature-title">WPP Rule Adherence</div>
+              <div class="feature-body">Seven rules assessed individually — start position, chest touch, pause quality, lockout, bar path, alignment, and pressing symmetry. Each scored Pass, Warning, or Fail.</div>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">⚡</div>
+            <div>
+              <div class="feature-title">Velocity Estimate</div>
+              <div class="feature-body">AI-estimated mean concentric velocity gives a directional read on bar speed — useful for load management and competition readiness without extra equipment.</div>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🎯</div>
+            <div>
+              <div class="feature-title">Referee Outcome Prediction</div>
+              <div class="feature-body">Every analysis ends with a clear verdict — Green, Amber, or Red — predicting how a WPP head referee would have judged the lift and why.</div>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">📄</div>
+            <div>
+              <div class="feature-title">Editable PDF Report</div>
+              <div class="feature-body">Edit any text before exporting. Share a branded PDF report with your athlete or coaching team. All data, no fluff.</div>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">📐</div>
+            <div>
+              <div class="feature-title">Camera Angle Aware</div>
+              <div class="feature-body">Analysis adapts to your camera position. Side-on, front, rear, and 45-degree referee angles each have specific guidance and adjusted confidence levels.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="rules-visual reveal">
+        <div class="rules-visual-title">⚔ WPP Rule Adherence — Example Output</div>
+        <div class="rules-visual-list">
+          <div class="rule-visual-row"><span class="rvr-badge pass">Pass</span><span class="rvr-name">Start Position and Body Stability</span></div>
+          <div class="rule-visual-row"><span class="rvr-badge pass">Pass</span><span class="rvr-name">Descent and Chest Touch</span></div>
+          <div class="rule-visual-row"><span class="rvr-badge warn">Warning</span><span class="rvr-name">Pause Quality</span></div>
+          <div class="rule-visual-row"><span class="rvr-badge warn">Warning</span><span class="rvr-name">Elbow Lockout — Simultaneous and Full</span></div>
+          <div class="rule-visual-row"><span class="rvr-badge pass">Pass</span><span class="rvr-name">Bar Path and Steering</span></div>
+          <div class="rule-visual-row"><span class="rvr-badge pass">Pass</span><span class="rvr-name">Elbow and Wrist Alignment</span></div>
+          <div class="rule-visual-row"><span class="rvr-badge warn">Warning</span><span class="rvr-name">Uneven Pressing</span></div>
+        </div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--card-border);">
+          <div style="font-size:11px;color:var(--gold);font-family:'Barlow Condensed',sans-serif;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;">🎯 Coaching Cues</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;gap:10px;font-size:12px;color:var(--grey-light);">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--gold);line-height:1;width:18px;">1</span>
+              <span>'Freeze it on the chest' — pause so still you could balance a coin on the bar</span>
+            </div>
+            <div style="display:flex;gap:10px;font-size:12px;color:var(--grey-light);">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--gold);line-height:1;width:18px;">2</span>
+              <span>'Both arms lock together' — elbows snap straight at exactly the same moment</span>
+            </div>
+            <div style="display:flex;gap:10px;font-size:12px;color:var(--grey-light);">
+              <span style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--gold);line-height:1;width:18px;">3</span>
+              <span>'Push the floor away with your back' — drive through the bench for full body contact</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO IT'S FOR -->
+<section class="who-section">
+  <div class="container">
+    <div class="section-eyebrow">Who it's for</div>
+    <h2 class="section-headline">Built for anyone<br>chasing white lights</h2>
+    <div class="who-grid reveal">
+      <div class="who-card">
+        <div class="who-icon">🏋️</div>
+        <div class="who-title">Competitive Para Powerlifters</div>
+        <div class="who-body">Know exactly what a WPP referee would flag before you step on the platform. Use RefLight in competition prep to eliminate the technical risks that cost white lights — pause duration, lockout symmetry, body stability.</div>
+      </div>
+      <div class="who-card">
+        <div class="who-icon">📋</div>
+        <div class="who-title">Coaches & Performance Staff</div>
+        <div class="who-body">Analyse multiple athletes across a training block. Export branded PDF reports to share with athletes and support staff. Get an objective, rulebook-based second opinion on technique you see every day.</div>
+      </div>
+      <div class="who-card">
+        <div class="who-icon">🌍</div>
+        <div class="who-title">Athletes Without Regular Coaching</div>
+        <div class="who-body">Not everyone has access to a technical coach who knows WPP rules. RefLight gives any athlete — anywhere in the world — the same level of feedback a national programme athlete gets in training.</div>
+      </div>
+      <div class="who-card">
+        <div class="who-icon">📈</div>
+        <div class="who-title">Competition Prep Monitoring</div>
+        <div class="who-body">Track technical consistency across a competition prep block. Analyse the same attempt at different loads to understand how technique changes under maximal effort — and address it before it matters.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="container">
+    <div class="section-eyebrow">Pricing</div>
+    <h2 class="section-headline">Pay for what<br>you use</h2>
+    <p class="section-sub">No subscription. No monthly fee. Buy a credit pack and use it at your own pace — credits never expire.</p>
+    <div class="pricing-grid reveal">
+      <div class="price-card">
+        <div class="price-name">Starter</div>
+        <div class="price-amount"><sup>£</sup>15</div>
+        <div class="price-per">one-time</div>
+        <div class="price-analyses">10 analyses</div>
+        <hr class="price-divider">
+        <div class="price-features">
+          <div class="price-feature">Full WPP rule assessment</div>
+          <div class="price-feature">Referee outcome prediction</div>
+          <div class="price-feature">Coaching cues &amp; corrections</div>
+          <div class="price-feature">PDF export</div>
+          <div class="price-feature">Credits never expire</div>
+        </div>
+        <a href="#" class="price-cta outline" onclick="openModal('Starter Pack — 10 Analyses','£15');return false;">Buy Starter Pack</a>
+      </div>
+      <div class="price-card featured">
+        <div class="price-name">Training Block</div>
+        <div class="price-amount"><sup>£</sup>35</div>
+        <div class="price-per">one-time</div>
+        <div class="price-analyses">30 analyses</div>
+        <hr class="price-divider">
+        <div class="price-features">
+          <div class="price-feature">Everything in Starter</div>
+          <div class="price-feature">Covers a full prep block</div>
+          <div class="price-feature">Multiple athletes</div>
+          <div class="price-feature">Best value per analysis</div>
+          <div class="price-feature">Credits never expire</div>
+        </div>
+        <a href="#" class="price-cta gold" onclick="openModal('Training Block — 30 Analyses','£35');return false;">Buy Training Block</a>
+      </div>
+      <div class="price-card">
+        <div class="price-name">Squad</div>
+        <div class="price-amount"><sup>£</sup>99</div>
+        <div class="price-per">one-time</div>
+        <div class="price-analyses">100 analyses</div>
+        <hr class="price-divider">
+        <div class="price-features">
+          <div class="price-feature">Everything in Training Block</div>
+          <div class="price-feature">Full squad coverage</div>
+          <div class="price-feature">Season-long monitoring</div>
+          <div class="price-feature">Priority support</div>
+          <div class="price-feature">Credits never expire</div>
+        </div>
+        <a href="#" class="price-cta outline" onclick="openModal('Squad Pack — 100 Analyses','£99');return false;">Buy Squad Pack</a>
+      </div>
+    </div>
+    <p class="price-note">Secure payment via Stripe. Credits added to your account immediately after payment.<br>Questions? <a href="mailto:hello@ref-light.co.uk" style="color:var(--gold);text-decoration:none;">hello@ref-light.co.uk</a></p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container">
+    <div class="section-eyebrow" style="justify-content:center;">FAQ</div>
+    <h2 class="section-headline" style="text-align:center;">Common questions</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">What camera angle should I use? <span class="faq-icon">+</span></div>
+        <div class="faq-a">The 45-degree referee angle — positioned diagonally from the end of the bench at roughly bench height — gives the most accurate rule adherence assessment. This is the same angle a WPP head referee sits at in competition, giving a clear view of elbow lockout, pause quality, and chest contact simultaneously. Side-on is useful for bar path and velocity but cannot reliably assess simultaneous lockout.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">How accurate is the AI analysis? <span class="faq-icon">+</span></div>
+        <div class="faq-a">RefLight is designed as a coaching and preparation tool, not a replacement for a qualified referee or coach. The analysis is based on visual frame extraction from your video, which means accuracy depends on video quality and camera angle. The velocity estimate is an AI visual estimate, not a calibrated measurement. Used consistently, it provides reliable directional feedback on technique and referee risk areas.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Does RefLight cover IPF able-bodied powerlifting? <span class="faq-icon">+</span></div>
+        <div class="faq-a">RefLight currently focuses on World Para Powerlifting (WPP) rules for para powerlifting bench press. IPF able-bodied analysis covering squat, bench press, and deadlift is on the roadmap. Join our mailing list to be notified when it launches.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">What happens to my video after analysis? <span class="faq-icon">+</span></div>
+        <div class="faq-a">Your video is uploaded to our server for processing, key frames are extracted for analysis, and the video file is deleted immediately after frame extraction. We never store your video permanently. Frame data is used for analysis only and is not retained after your report is generated.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">Do credits expire? <span class="faq-icon">+</span></div>
+        <div class="faq-a">No. Credits never expire. Buy a pack when you need it and use them at your own pace — across a competition prep block, a full season, or across multiple athletes.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q" onclick="toggleFaq(this)">What video formats are supported? <span class="faq-icon">+</span></div>
+        <div class="faq-a">RefLight accepts MP4 and MOV files, which covers all modern smartphones. You can also record directly in the app on mobile. Single rep clips work best — ideally 10-30 seconds covering the full lift from setup to rack.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BANNER -->
+<section class="cta-section">
+  <div class="container">
+    <h2 class="cta-headline">Ready to know your<br><span>whites before your lights?</span></h2>
+    <p class="cta-sub">Start with 10 analyses for £15. No subscription. Credits never expire.</p>
+    <a href="#pricing" class="btn-primary">Get Started — £15</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-copy">© 2026 RefLight · ref-light.co.uk · All rights reserved</div>
+      <div class="footer-links">
+        <a href="para-lift-analyser-app.html" class="footer-link">Open App</a>
+        <a href="mailto:hello@ref-light.co.uk" class="footer-link">Contact</a>
+        <a href="#" class="footer-link">Privacy Policy</a>
+        <a href="#" class="footer-link">Terms</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- PAYMENT MODAL (placeholder — Stripe links to be added) -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-title">Get Your Credits</div>
+    <div class="modal-subtitle">Secure payment via Stripe — credits added instantly</div>
+    <div class="modal-pack-summary">
+      <div class="modal-pack-name" id="modalPackName">—</div>
+      <div class="modal-pack-price" id="modalPackPrice">—</div>
+    </div>
+    <div style="background:rgba(201,168,76,0.08);border:1px solid var(--card-border);border-radius:10px;padding:16px;text-align:center;">
+      <div style="font-size:13px;color:var(--grey-light);line-height:1.7;">
+        Stripe payment integration coming very soon.<br>
+        To purchase credits now, email us at<br>
+        <a href="mailto:hello@ref-light.co.uk" style="color:var(--gold);font-weight:600;">hello@ref-light.co.uk</a><br>
+        and we'll get you set up manually within 24 hours.
+      </div>
+    </div>
+    <p class="modal-note">🔒 Payments secured by Stripe · Credits never expire · No subscription</p>
+  </div>
+</div>
+
+<script>
+// Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 80);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+reveals.forEach(r => observer.observe(r));
+
+// FAQ
+function toggleFaq(el) {
+  const item = el.parentElement;
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+// Modal
+function openModal(name, price) {
+  document.getElementById('modalPackName').textContent = name;
+  document.getElementById('modalPackPrice').textContent = price;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
