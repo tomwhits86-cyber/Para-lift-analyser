@@ -325,12 +325,12 @@ WPP RULES TO ASSESS:
 
 Only assess what is visible from the stated camera angle. Apply the angle limitations strictly.
 
-LANGUAGE STYLE - IMPORTANT:
-Write all feedback as if describing what is visible in the video, not referencing specific frame numbers or timestamps. 
-- NEVER say "Frame 4 shows..." or "At 3.94s..." or "frames 6-7 indicate..."
-- ALWAYS say "In the video..." or "The lift shows..." or "During the descent..." or "At chest contact..." or "Through the concentric phase..."
-- Write as a coach describing what they see, not as a technical system reporting frame data.
-- Use natural coaching language throughout — athletes and coaches should feel they are reading expert feedback, not a technical report.
+LANGUAGE STYLE - CRITICAL:
+Write all feedback in natural coaching language. You are a coach describing what you see in a video, not a technical system reporting data.
+- NEVER reference frames, frame numbers, timestamps, or seconds. No "Frame 4", "at 3.94s", "frames 6-7", "the lockout frame", "the supposed lockout frame", "frame sequence", "available frames" or any similar phrasing.
+- ALWAYS use natural video description: "In the video...", "The lift shows...", "During the descent...", "At chest contact...", "Through the concentric phase...", "As the bar approaches lockout...", "During the pause..."
+- If you cannot assess something due to camera angle or video quality, say "This cannot be fully assessed from this camera angle" — do not reference frames or what was or was not captured.
+- Write as an expert coach giving feedback after watching a training video. Every sentence should sound like it came from a person, not a system.
 
 SPOTTER AWARENESS:
 Training videos frequently include spotters. Apply these rules strictly:
@@ -348,7 +348,7 @@ Respond ONLY with valid JSON:
   "pause_score": 0-100,
   "press_score": 0-100,
   "bar_speed_estimate": "estimated m/s from concentric frames",
-  "velocity_category": "Maximal (>0.8m/s) or Strength (0.5-0.8m/s) or Grind (<0.5m/s)",
+  "velocity_category": "MUST match the bar_speed_estimate value exactly: use Maximal if value >0.8, Strength if value 0.5-0.8, Grind if value <0.5",
   "verdict": "Green or Amber or Red",
   "verdict_headline": "max 8 words - referee outcome prediction",
   "summary": "2-3 sentences. State what the inferred referee outcome would be and why. Reference angle limitations.",
