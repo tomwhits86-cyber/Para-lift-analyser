@@ -135,6 +135,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .mode-dot.online{background:var(--green);}.mode-dot.offline{background:var(--red);}.mode-dot.checking{background:var(--amber);animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
 .mode-text{color:var(--grey-light);flex:1;}.mode-text strong{color:var(--white);}
+.editable{cursor:text;transition:background 0.2s;border-radius:6px;outline:none;}
+.editable:hover{background:rgba(201,168,76,0.06);}
+.editable:focus{background:rgba(201,168,76,0.1);padding:2px 6px;outline:2px solid rgba(201,168,76,0.4);}
+.edit-hint{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dim);margin-bottom:16px;display:none;padding:8px 12px;background:rgba(201,168,76,0.05);border-radius:8px;border:1px solid var(--card-border);}
+.results.visible .edit-hint{display:block;}
 .angle-guide{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(201,168,76,0.06);border:1px solid var(--card-border);border-radius:10px;margin-top:-12px;margin-bottom:20px;font-size:12px;}
 .angle-guide-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
 .angle-guide-text{color:var(--grey-light);line-height:1.5;}
@@ -253,6 +258,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
     <h2>Analysis - <span id="rAthlete"></span></h2>
     <div class="results-meta" id="rMeta"></div>
   </div>
+  <div class="edit-hint">&#9998; Tap any text to edit before exporting PDF</div>
   <div class="score-row" id="scoreRow"></div>
   <div class="vel-card">
     <div class="vel-icon">&#9889;</div>
@@ -441,23 +447,23 @@ function renderResults(d,meta,athlete,sessionType,load) {
   const vcls={Green:"green",Amber:"amber",Red:"red"};
   const vico={Green:"[GOOD]",Amber:"[WARNING]",Red:"[RED LIGHT]"};
   const v=d.verdict||"Amber";
-  document.getElementById("verdictEl").innerHTML="<div class='verdict "+(vcls[v]||"amber")+"'><div class='verdict-icon'>"+vico[v]+"</div><div><h3>"+(d.verdict_headline||v)+"</h3><p>"+(d.summary||"")+"</p></div></div>";
+  document.getElementById("verdictEl").innerHTML="<div class='verdict "+(vcls[v]||"amber")+"'><div class='verdict-icon'>"+vico[v]+"</div><div><h3 class='editable' contenteditable='true'>"+(d.verdict_headline||v)+"</h3><p class='editable' contenteditable='true'>"+(d.summary||"")+"</p></div></div>";
 
   const rules=d.rule_adherence||[];
   document.getElementById("rulesList").innerHTML=rules.map(r=>{
     const sc=(r.status||"").toLowerCase();
     const bc=sc==="pass"?"pass":sc==="fail"?"fail":"warning";
-    return "<div class='rule-row'><div class='rule-status'><span class='rule-badge "+bc+"'>"+(r.status||"?")+"</span></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail'>"+r.detail+"</div></div></div>";
+    return "<div class='rule-row'><div class='rule-status'><span class='rule-badge "+bc+"'>"+(r.status||"?")+"</span></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail editable' contenteditable='true'>"+r.detail+"</div></div></div>";
   }).join("");
 
   const strengths=d.strengths||[];
-  document.getElementById("strengthsList").innerHTML=strengths.map(s=>"<div class='strength-item'><div class='strength-dot'></div><span>"+s+"</span></div>").join("");
+  document.getElementById("strengthsList").innerHTML=strengths.map(s=>"<div class='strength-item'><div class='strength-dot'></div><span class='editable' contenteditable='true'>"+s+"</span></div>").join("");
 
   const corrections=d.technical_corrections||[];
-  document.getElementById("correctionsList").innerHTML=corrections.map(c=>"<div class='correction-item'><div class='correction-dot'></div><span>"+c+"</span></div>").join("");
+  document.getElementById("correctionsList").innerHTML=corrections.map(c=>"<div class='correction-item'><div class='correction-dot'></div><span class='editable' contenteditable='true'>"+c+"</span></div>").join("");
 
   const cues=d.coaching_cues||[];
-  document.getElementById("cuesList").innerHTML=cues.map((c,i)=>"<div class='cue'><div class='cue-num'>"+(i+1)+"</div><div class='cue-text'>"+c+"</div></div>").join("");
+  document.getElementById("cuesList").innerHTML=cues.map((c,i)=>"<div class='cue'><div class='cue-num'>"+(i+1)+"</div><div class='cue-text editable' contenteditable='true'>"+c+"</div></div>").join("");
 
   document.getElementById("results").classList.add("visible");
   document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"});
@@ -580,11 +586,16 @@ function exportPDF() {
       doc.setTextColor(...vcol);
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
-      doc.text(d.verdict_headline || d.verdict || '', margin + 4, y + 8);
+      const hEl = document.querySelector('#verdictEl h3');
+      doc.text(hEl ? hEl.innerText : (d.verdict_headline || d.verdict || ''), margin + 4, y + 8);
       doc.setTextColor(...white);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      const summaryLines = doc.splitTextToSize(d.summary || '', contentW - 8);
+      const summaryEl = document.querySelector('#verdictEl p');
+      const headlineEl = document.querySelector('#verdictEl h3');
+      const editedSummary = summaryEl ? summaryEl.innerText : (d.summary || '');
+      const editedHeadline = headlineEl ? headlineEl.innerText : (d.verdict_headline || d.verdict || '');
+      const summaryLines = doc.splitTextToSize(editedSummary, contentW - 8);
       doc.text(summaryLines.slice(0, 2), margin + 4, y + 15);
       y += 28;
 
@@ -614,7 +625,8 @@ function exportPDF() {
         doc.text(r.rule || '', margin + 22, y + 6);
         doc.setTextColor(...grey);
         doc.setFont('helvetica', 'normal');
-        const detail = doc.splitTextToSize(r.detail || '', contentW - 26);
+        const editedDetail = ruleDetailEls[idx] ? ruleDetailEls[idx].innerText : (r.detail || '');
+        const detail = doc.splitTextToSize(editedDetail, contentW - 26);
         doc.text(detail[0] || '', margin + 22, y + 10);
         y += 14;
       });
@@ -627,7 +639,9 @@ function exportPDF() {
       doc.setFont('helvetica', 'bold');
       doc.text('TECHNICAL STRENGTHS', margin, y);
       y += 6;
-      (d.strengths || []).forEach(function(s) {
+      const strengthEls = document.querySelectorAll('#strengthsList .editable');
+      const strengthsData = strengthEls.length > 0 ? Array.from(strengthEls).map(function(el){return el.innerText;}) : (d.strengths || []);
+      strengthsData.forEach(function(s) {
         checkPage(8);
         doc.setTextColor(...green);
         doc.setFontSize(9);
@@ -648,7 +662,9 @@ function exportPDF() {
       doc.setFont('helvetica', 'bold');
       doc.text('TECHNICAL CORRECTIONS', margin, y);
       y += 6;
-      (d.technical_corrections || []).forEach(function(c) {
+      const correctionEls = document.querySelectorAll('#correctionsList .editable');
+      const correctionsData = correctionEls.length > 0 ? Array.from(correctionEls).map(function(el){return el.innerText;}) : (d.technical_corrections || []);
+      correctionsData.forEach(function(c) {
         checkPage(8);
         doc.setTextColor(...amber);
         doc.setFontSize(9);
@@ -669,7 +685,9 @@ function exportPDF() {
       doc.setFont('helvetica', 'bold');
       doc.text('COACHING CUES', margin, y);
       y += 6;
-      (d.coaching_cues || []).forEach(function(c, i) {
+      const cueEls = document.querySelectorAll('#cuesList .cue-text');
+      const cuesData = cueEls.length > 0 ? Array.from(cueEls).map(function(el){return el.innerText;}) : (d.coaching_cues || []);
+      cuesData.forEach(function(c, i) {
         checkPage(12);
         doc.setFillColor(18, 32, 64);
         doc.roundedRect(margin, y, contentW, 10, 1, 1, 'F');
