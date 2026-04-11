@@ -48,10 +48,12 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba
 .hero::after { content: ''; position: absolute; bottom: -100px; left: -200px; width: 600px; height: 600px; background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 70%); pointer-events: none; }
 .hero-eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; opacity: 0; animation: fadeUp 0.6s 0.1s forwards; }
 .hero-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--gold); }
-.hero-headline { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(52px, 8vw, 96px); font-weight: 900; line-height: 0.95; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 24px; opacity: 0; animation: fadeUp 0.6s 0.2s forwards; }
+.hero-headline { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(52px, 8vw, 96px); font-weight: 900; line-height: 0.95; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 24px; opacity: 0; animation: fadeUp 0.6s 0.2s forwards; max-width: 640px; }
 .hero-headline .line-gold { color: var(--gold); display: block; }
 .hero-headline .line-white { color: var(--white); display: block; }
 .hero-sub { font-size: 18px; font-weight: 400; color: var(--grey-light); max-width: 520px; line-height: 1.6; margin-bottom: 40px; opacity: 0; animation: fadeUp 0.6s 0.35s forwards; }
+.hero .container { max-width: 60%; }
+@media (max-width: 900px) { .hero .container { max-width: 100%; } }
 .hero-sub strong { color: var(--white); font-weight: 600; }
 .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; opacity: 0; animation: fadeUp 0.6s 0.5s forwards; }
 .btn-primary { background: var(--gold); color: var(--navy); font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 16px 36px; border-radius: var(--radius); text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; display: inline-block; }
