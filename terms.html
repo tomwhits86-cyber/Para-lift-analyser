@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="RefLight Terms of Service — the terms under which you use the RefLight lift analysis service.">
+<title>Terms of Service — RefLight</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0a1628;--navy-mid:#122040;--gold:#c9a84c;--gold-bright:#f0c040;--gold-dim:#7a6030;
+  --white:#f4f6fa;--grey:#8a9ab8;--grey-light:#c8d4e8;--green:#2ecc7a;--amber:#f0a830;
+  --card:rgba(255,255,255,0.04);--card-border:rgba(201,168,76,0.18);--radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--navy);color:var(--white);font-family:'Barlow',sans-serif;line-height:1.7;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,rgba(201,168,76,0.05) 0%,transparent 60%);pointer-events:none;z-index:0;}
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,22,40,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--card-border);padding:14px 0;}
+.nav-inner{max-width:900px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;}
+.logo-block{display:flex;align-items:center;gap:12px;text-decoration:none;}
+.logo-mark{width:36px;height:36px;background:var(--gold);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:11px;color:var(--navy);}
+.logo-text .org{font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:2.5px;color:var(--gold);text-transform:uppercase;line-height:1;}
+.logo-text .tool{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--white);text-transform:uppercase;line-height:1;}
+.nav-home{font-size:13px;color:var(--grey-light);text-decoration:none;transition:color 0.2s;}
+.nav-home:hover{color:var(--gold);}
+.page{max-width:900px;margin:0 auto;padding:120px 24px 80px;position:relative;z-index:1;}
+.page-eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.page-eyebrow::before{content:'';width:24px;height:1px;background:var(--gold);}
+.page-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(36px,6vw,64px);font-weight:900;text-transform:uppercase;letter-spacing:-0.5px;line-height:1;margin-bottom:8px;}
+.page-date{font-size:13px;color:var(--grey);margin-bottom:48px;padding-bottom:24px;border-bottom:1px solid var(--card-border);}
+.toc{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:24px 28px;margin-bottom:48px;}
+.toc-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.toc-list{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.toc-list a{color:var(--grey-light);text-decoration:none;font-size:14px;transition:color 0.2s;}
+.toc-list a:hover{color:var(--gold);}
+.toc-list li::before{content:'→ ';color:var(--gold-dim);}
+.section{margin-bottom:48px;}
+.section-title{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--white);margin-bottom:16px;padding-top:16px;}
+.section p{font-size:15px;color:var(--grey-light);margin-bottom:14px;line-height:1.8;}
+.section ul,.section ol{padding-left:20px;margin-bottom:14px;}
+.section li{font-size:15px;color:var(--grey-light);margin-bottom:8px;line-height:1.7;}
+.highlight-box{background:rgba(201,168,76,0.06);border:1px solid var(--card-border);border-radius:10px;padding:16px 20px;margin-bottom:16px;}
+.highlight-box p{margin-bottom:0;}
+.warning-box{background:rgba(240,168,48,0.06);border:1px solid rgba(240,168,48,0.25);border-radius:10px;padding:16px 20px;margin-bottom:16px;}
+.warning-box p{margin-bottom:0;color:var(--grey-light);}
+strong{color:var(--white);}
+a{color:var(--gold);text-decoration:none;}
+a:hover{text-decoration:underline;}
+footer{border-top:1px solid var(--card-border);padding:40px 0;margin-top:60px;}
+.footer-inner{max-width:900px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+.footer-copy{font-size:12px;color:var(--grey);}
+.footer-links{display:flex;gap:20px;}
+.footer-link{font-size:12px;color:var(--grey);text-decoration:none;transition:color 0.2s;}
+.footer-link:hover{color:var(--gold);}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="index.html" class="logo-block">
+      <div class="logo-mark">RL</div>
+      <div class="logo-text">
+        <div class="org">RefLight</div>
+        <div class="tool">Lift Analyser</div>
+      </div>
+    </a>
+    <a href="index.html" class="nav-home">← Back to RefLight</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-eyebrow">Legal</div>
+  <h1 class="page-title">Terms of Service</h1>
+  <div class="page-date">Last updated: April 2026</div>
+
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <ul class="toc-list">
+      <li><a href="#agreement">1. Agreement to these terms</a></li>
+      <li><a href="#service">2. What RefLight provides</a></li>
+      <li><a href="#not-a-guarantee">3. No guarantee of competition outcomes</a></li>
+      <li><a href="#credits">4. Credits and payments</a></li>
+      <li><a href="#refunds">5. Refund policy</a></li>
+      <li><a href="#acceptable-use">6. Acceptable use</a></li>
+      <li><a href="#intellectual-property">7. Intellectual property</a></li>
+      <li><a href="#liability">8. Limitation of liability</a></li>
+      <li><a href="#availability">9. Service availability</a></li>
+      <li><a href="#changes">10. Changes to these terms</a></li>
+      <li><a href="#governing-law">11. Governing law</a></li>
+      <li><a href="#contact">12. Contact</a></li>
+    </ul>
+  </div>
+
+  <div class="section" id="agreement">
+    <div class="section-title">1. Agreement to these terms</div>
+    <p>By accessing or using RefLight at <a href="https://www.ref-light.co.uk">www.ref-light.co.uk</a>, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the service.</p>
+    <p>RefLight is operated by Tom Whittaker, trading as RefLight, United Kingdom. Contact: <a href="mailto:hello@ref-light.co.uk">hello@ref-light.co.uk</a></p>
+  </div>
+
+  <div class="section" id="service">
+    <div class="section-title">2. What RefLight provides</div>
+    <p>RefLight is an AI-powered video analysis tool designed to help para powerlifting athletes and coaches assess bench press technique against World Para Powerlifting (WPP) technical rules.</p>
+    <p>The service provides:</p>
+    <ul>
+      <li>AI-generated analysis of uploaded training videos</li>
+      <li>Assessment of technique against WPP rule criteria</li>
+      <li>Referee risk assessment indicating the likelihood of technical rule compliance</li>
+      <li>Coaching cues and technical corrections</li>
+      <li>AI velocity estimation (uncalibrated directional indicator)</li>
+      <li>Exportable PDF reports</li>
+    </ul>
+    <p>RefLight is a <strong>coaching and preparation aid</strong>. It is not a substitute for qualified coaching, official referee assessment, or professional sports science advice.</p>
+  </div>
+
+  <div class="section" id="not-a-guarantee">
+    <div class="section-title">3. No guarantee of competition outcomes</div>
+    <div class="warning-box">
+      <p><strong>Important:</strong> RefLight does not guarantee, predict, or promise any specific outcome at competition. All analysis represents an assessment of likelihood and risk based on the information visible in the uploaded video. Actual competition results depend on many factors outside RefLight's assessment, including referee discretion, competition conditions, and factors not visible in training footage.</p>
+    </div>
+    <p>Specifically:</p>
+    <ul>
+      <li>A "Green" or positive verdict does not guarantee white lights in competition</li>
+      <li>A "Warning" or "Amber" verdict does not guarantee red lights in competition</li>
+      <li>Referee decisions are made by qualified human officials and RefLight's analysis cannot replicate or replace that judgement</li>
+      <li>Analysis accuracy depends on video quality, camera angle, and the visibility of key technical moments in the uploaded footage</li>
+      <li>Velocity estimates are AI visual estimates and should not be treated as calibrated measurements</li>
+    </ul>
+    <p>RefLight's assessments should be used as one input among several in an athlete's competition preparation — not as a definitive prediction of competition results.</p>
+  </div>
+
+  <div class="section" id="credits">
+    <div class="section-title">4. Credits and payments</div>
+    <p>Access to RefLight analysis is provided via pre-purchased credit packs. Each analysis consumes one credit.</p>
+    <ul>
+      <li>Credits are purchased via Stripe and are non-transferable</li>
+      <li>Credits do not expire</li>
+      <li>Credits are personal to the purchasing account and cannot be transferred to another user</li>
+      <li>Credit balances are not redeemable for cash</li>
+    </ul>
+    <p>Payments are processed securely by Stripe. RefLight does not store payment card details. By purchasing credits you agree to Stripe's terms of service.</p>
+  </div>
+
+  <div class="section" id="refunds">
+    <div class="section-title">5. Refund policy</div>
+    <p>Due to the nature of digital services, we do not offer refunds on purchased credit packs once credits have been used.</p>
+    <p>If you experience a technical fault that prevents a valid analysis from being delivered — for example, a server error that consumes a credit without returning a report — please contact us at <a href="mailto:hello@ref-light.co.uk">hello@ref-light.co.uk</a> and we will review the case and restore the credit where appropriate.</p>
+    <p>Unused credits on credit packs are non-refundable. We recommend starting with the Starter Pack to assess whether RefLight meets your needs before purchasing larger packs.</p>
+  </div>
+
+  <div class="section" id="acceptable-use">
+    <div class="section-title">6. Acceptable use</div>
+    <p>You agree to use RefLight only for lawful purposes and in accordance with these terms. You must not:</p>
+    <ul>
+      <li>Upload video content that you do not have the right to share</li>
+      <li>Upload video content featuring individuals who have not consented to being filmed and their footage being processed</li>
+      <li>Attempt to reverse engineer, decompile, or extract the underlying AI prompts or models</li>
+      <li>Use the service in any way that could damage, disable, or impair it</li>
+      <li>Resell or redistribute RefLight analysis reports as your own product without attribution</li>
+      <li>Use automated tools or scripts to make requests to the service</li>
+    </ul>
+    <p>You are responsible for ensuring that any athlete whose footage you upload has given appropriate consent for their video to be processed for technical analysis purposes.</p>
+  </div>
+
+  <div class="section" id="intellectual-property">
+    <div class="section-title">7. Intellectual property</div>
+    <p>The RefLight platform, branding, interface, and underlying technology are the intellectual property of Tom Whittaker trading as RefLight. All rights reserved.</p>
+    <p>Analysis reports generated by RefLight are provided for your personal or professional coaching use. You may share reports with athletes and coaching staff. You may not republish or sell reports as a standalone product.</p>
+    <p>Video content you upload remains your own. You grant RefLight a temporary licence to process the video for the purpose of generating your analysis report. This licence ends when the video is deleted (immediately after frame extraction).</p>
+  </div>
+
+  <div class="section" id="liability">
+    <div class="section-title">8. Limitation of liability</div>
+    <p>To the fullest extent permitted by law, RefLight and its operator shall not be liable for:</p>
+    <ul>
+      <li>Any competition result, whether or not it aligns with RefLight's assessment</li>
+      <li>Any injury arising from coaching decisions made based on RefLight analysis</li>
+      <li>Any indirect, incidental, or consequential loss arising from use of the service</li>
+      <li>Loss of data, including analysis reports not saved by the user before closing their session</li>
+      <li>Service interruptions or downtime</li>
+    </ul>
+    <p>Our total liability to you in any circumstances shall not exceed the amount you paid for the credit pack used in the relevant analysis.</p>
+    <p>Nothing in these terms excludes liability for death or personal injury caused by negligence, or for fraud or fraudulent misrepresentation.</p>
+  </div>
+
+  <div class="section" id="availability">
+    <div class="section-title">9. Service availability</div>
+    <p>RefLight is provided on an "as available" basis. We do not guarantee uninterrupted access to the service. We may perform maintenance, updates, or modifications to the service at any time.</p>
+    <p>RefLight is currently in <strong>Beta</strong>. Features may change, and the service may be subject to limitations or interruptions as we continue to develop and improve it.</p>
+    <p>We will endeavour to notify users of significant planned downtime where possible via <a href="mailto:hello@ref-light.co.uk">hello@ref-light.co.uk</a>.</p>
+  </div>
+
+  <div class="section" id="changes">
+    <div class="section-title">10. Changes to these terms</div>
+    <p>We may update these terms from time to time. When we do, we will update the "Last updated" date at the top of this page. Continued use of RefLight after changes are posted constitutes acceptance of the updated terms.</p>
+    <p>For significant changes we will notify registered users by email where possible.</p>
+  </div>
+
+  <div class="section" id="governing-law">
+    <div class="section-title">11. Governing law</div>
+    <p>These terms are governed by the laws of England and Wales. Any disputes arising from these terms or your use of RefLight shall be subject to the exclusive jurisdiction of the courts of England and Wales.</p>
+  </div>
+
+  <div class="section" id="contact">
+    <div class="section-title">12. Contact</div>
+    <p>If you have any questions about these terms, please contact us:</p>
+    <ul>
+      <li><strong>Email:</strong> <a href="mailto:hello@ref-light.co.uk">hello@ref-light.co.uk</a></li>
+      <li><strong>Website:</strong> <a href="https://www.ref-light.co.uk">www.ref-light.co.uk</a></li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-copy">© 2026 RefLight · ref-light.co.uk · All rights reserved</div>
+    <div class="footer-links">
+      <a href="index.html" class="footer-link">Home</a>
+      <a href="para-lift-analyser-app.html" class="footer-link">Open App</a>
+      <a href="privacy.html" class="footer-link">Privacy Policy</a>
+      <a href="mailto:hello@ref-light.co.uk" class="footer-link">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
