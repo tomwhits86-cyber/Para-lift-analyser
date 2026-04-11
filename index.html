@@ -3,28 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="RefLight — AI-powered para powerlifting video analysis. Know your whites before your lights. In-depth referee outcome prediction before you compete.">
+<meta name="description" content="RefLight — AI-powered para powerlifting video analysis. Know your whites before your lights. In-depth referee risk assessment to help you prepare for competition.">
 <title>RefLight — Know Your Whites Before Your Lights</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --navy: #0a1628;
-  --navy-mid: #122040;
-  --navy-light: #1a2d50;
-  --gold: #c9a84c;
-  --gold-bright: #f0c040;
-  --gold-dim: #7a6030;
-  --gold-pale: rgba(201,168,76,0.12);
-  --white: #f4f6fa;
-  --grey: #8a9ab8;
-  --grey-light: #c8d4e8;
-  --green: #2ecc7a;
-  --amber: #f0a830;
-  --red: #e84040;
-  --card: rgba(255,255,255,0.04);
-  --card-border: rgba(201,168,76,0.18);
-  --radius: 14px;
+  --navy: #0a1628;--navy-mid: #122040;--navy-light: #1a2d50;--gold: #c9a84c;--gold-bright: #f0c040;--gold-dim: #7a6030;--gold-pale: rgba(201,168,76,0.12);--white: #f4f6fa;--grey: #8a9ab8;--grey-light: #c8d4e8;--green: #2ecc7a;--amber: #f0a830;--red: #e84040;--card: rgba(255,255,255,0.04);--card-border: rgba(201,168,76,0.18);--radius: 14px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -37,23 +22,21 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba
 .logo-mark { width: 36px; height: 36px; background: var(--gold); clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; align-items: center; justify-content: center; font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 11px; color: var(--navy); }
 .logo-text .org { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 2.5px; color: var(--gold); text-transform: uppercase; line-height: 1; }
 .logo-text .tool { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); text-transform: uppercase; line-height: 1; }
+.beta-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; background: rgba(240,168,48,0.15); color: var(--amber); border: 1px solid rgba(240,168,48,0.4); padding: 3px 8px; border-radius: 4px; vertical-align: middle; }
 .nav-cta { display: flex; align-items: center; gap: 16px; }
 .nav-link { font-size: 13px; font-weight: 500; color: var(--grey-light); text-decoration: none; transition: color 0.2s; }
 .nav-link:hover { color: var(--gold); }
 .btn-nav { background: var(--gold); color: var(--navy); font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 9px 20px; border-radius: 8px; text-decoration: none; transition: background 0.2s, transform 0.1s; }
 .btn-nav:hover { background: var(--gold-bright); transform: translateY(-1px); }
-.beta-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; background: rgba(240,168,48,0.15); color: var(--amber); border: 1px solid rgba(240,168,48,0.4); padding: 3px 8px; border-radius: 4px; vertical-align: middle; }
 .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 120px 0 80px; position: relative; overflow: hidden; }
-.hero .container { display: grid; grid-template-columns: 1fr 360px; gap: 40px; align-items: center; }
-@media (max-width: 900px) { .hero .container { grid-template-columns: 1fr; } }
 .hero::before { content: ''; position: absolute; top: -200px; right: -300px; width: 800px; height: 800px; background: radial-gradient(ellipse, rgba(201,168,76,0.08) 0%, transparent 70%); pointer-events: none; }
 .hero::after { content: ''; position: absolute; bottom: -100px; left: -200px; width: 600px; height: 600px; background: radial-gradient(ellipse, rgba(201,168,76,0.04) 0%, transparent 70%); pointer-events: none; }
 .hero-eyebrow { font-family: 'Barlow Condensed', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; opacity: 0; animation: fadeUp 0.6s 0.1s forwards; }
 .hero-eyebrow::before { content: ''; width: 32px; height: 1px; background: var(--gold); }
-.hero-headline { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(44px, 6vw, 80px); font-weight: 900; line-height: 0.95; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 24px; opacity: 0; animation: fadeUp 0.6s 0.2s forwards; }
+.hero-headline { font-family: 'Barlow Condensed', sans-serif; font-size: clamp(48px, 6.5vw, 84px); font-weight: 900; line-height: 0.95; text-transform: uppercase; letter-spacing: -1px; margin-bottom: 24px; opacity: 0; animation: fadeUp 0.6s 0.2s forwards; max-width: 55%; }
 .hero-headline .line-gold { color: var(--gold); display: block; }
 .hero-headline .line-white { color: var(--white); display: block; }
-.hero-sub { font-size: 18px; font-weight: 400; color: var(--grey-light); max-width: 520px; line-height: 1.6; margin-bottom: 40px; opacity: 0; animation: fadeUp 0.6s 0.35s forwards; }
+.hero-sub { font-size: 18px; font-weight: 400; color: var(--grey-light); max-width: 480px; line-height: 1.6; margin-bottom: 40px; opacity: 0; animation: fadeUp 0.6s 0.35s forwards; }
 .hero-sub strong { color: var(--white); font-weight: 600; }
 .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; opacity: 0; animation: fadeUp 0.6s 0.5s forwards; }
 .btn-primary { background: var(--gold); color: var(--navy); font-family: 'Barlow Condensed', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; padding: 16px 36px; border-radius: var(--radius); text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; display: inline-block; }
@@ -63,8 +46,8 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba
 .hero-trust { margin-top: 60px; display: flex; align-items: center; gap: 28px; flex-wrap: wrap; opacity: 0; animation: fadeUp 0.6s 0.65s forwards; }
 .trust-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--grey); font-weight: 500; letter-spacing: 0.5px; }
 .trust-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); flex-shrink: 0; }
-.hero-visual { width: 100%; opacity: 0; animation: fadeLeft 0.8s 0.6s forwards; }
-@media (max-width: 900px) { .hero-visual { display: none; } .hero-headline { font-size: clamp(44px, 10vw, 72px); } }
+.hero-visual { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 320px; opacity: 0; animation: fadeLeft 0.8s 0.6s forwards; }
+@media (max-width: 960px) { .hero-visual { display: none; } .hero-headline { max-width: 100%; font-size: clamp(44px, 10vw, 72px); } }
 .mock-card { background: var(--navy-mid); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 20px; position: relative; }
 .mock-card::before { content: ''; position: absolute; inset: -1px; border-radius: calc(var(--radius) + 1px); background: linear-gradient(135deg, rgba(201,168,76,0.3), transparent 60%); z-index: -1; }
 .mock-header { font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; color: var(--white); margin-bottom: 2px; }
@@ -225,6 +208,7 @@ footer { border-top: 1px solid var(--card-border); padding: 40px 0; }
       <div class="trust-item"><div class="trust-dot"></div>Referee Risk Assessment</div>
       <div class="trust-item"><div class="trust-dot"></div>Instant PDF Report</div>
     </div>
+  </div>
   <div class="hero-visual">
     <div class="mock-card">
       <div class="mock-header">Analysis — <span>Athlete Name</span></div>
@@ -264,21 +248,9 @@ footer { border-top: 1px solid var(--card-border); padding: 40px 0; }
     <h2 class="section-headline">Three steps to<br>competition readiness</h2>
     <p class="section-sub">No wearables. No setup. Film your lift, upload the video, and get your report in under two minutes.</p>
     <div class="steps reveal">
-      <div class="step">
-        <div class="step-num">01</div>
-        <div class="step-title">Film Your Lift</div>
-        <div class="step-body">Record a single rep on any smartphone. Use the 45-degree referee angle for the most accurate rule adherence assessment — the same view a head referee uses in competition.</div>
-      </div>
-      <div class="step">
-        <div class="step-num">02</div>
-        <div class="step-title">Upload &amp; Analyse</div>
-        <div class="step-body">Upload directly in the RefLight app. Our AI extracts key frames, detects the lift boundaries, and assesses every moment against the official WPP technical rulebook.</div>
-      </div>
-      <div class="step">
-        <div class="step-num">03</div>
-        <div class="step-title">Act on the Feedback</div>
-        <div class="step-body">Get an overall score, a 7-rule adherence breakdown, technical corrections, and three coaching cues — ready to use the same session. Export a branded PDF to share with your coach.</div>
-      </div>
+      <div class="step"><div class="step-num">01</div><div class="step-title">Film Your Lift</div><div class="step-body">Record a single rep on any smartphone. Use the 45-degree referee angle for the most accurate rule adherence assessment — the same view a head referee uses in competition.</div></div>
+      <div class="step"><div class="step-num">02</div><div class="step-title">Upload &amp; Analyse</div><div class="step-body">Upload directly in the RefLight app. Our AI extracts key frames, detects the lift boundaries, and assesses every moment against the official WPP technical rulebook.</div></div>
+      <div class="step"><div class="step-num">03</div><div class="step-title">Act on the Feedback</div><div class="step-body">Get an overall score, a 7-rule adherence breakdown, technical corrections, and three coaching cues — ready to use the same session. Export a branded PDF to share with your coach.</div></div>
     </div>
   </div>
 </section>
@@ -291,41 +263,11 @@ footer { border-top: 1px solid var(--card-border); padding: 40px 0; }
         <h2 class="section-headline">Built for<br>competitive lifters</h2>
         <p class="section-sub" style="margin-bottom:32px;">Every feature is designed around one question: what technical risk does this lift carry with a WPP referee?</p>
         <div class="features-list reveal">
-          <div class="feature-item">
-            <div class="feature-icon">🏋️</div>
-            <div>
-              <div class="feature-title">WPP Rule Adherence</div>
-              <div class="feature-body">Seven rules assessed individually — start position, chest touch, pause quality, lockout, bar path, alignment, and pressing symmetry. Each scored Pass, Warning, or Fail.</div>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">⚡</div>
-            <div>
-              <div class="feature-title">Velocity Estimate</div>
-              <div class="feature-body">AI-estimated mean concentric velocity gives a directional read on bar speed — useful for load management and competition readiness without extra equipment.</div>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">🎯</div>
-            <div>
-              <div class="feature-title">Referee Risk Assessment</div>
-              <div class="feature-body">Every analysis ends with a clear verdict — Green, Amber, or Red — indicating the likelihood of white lights and flagging the specific areas a WPP head referee would scrutinise.</div>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">📄</div>
-            <div>
-              <div class="feature-title">Editable PDF Report</div>
-              <div class="feature-body">Edit any text before exporting. Share a branded PDF report with your athlete or coaching team. All data, no fluff.</div>
-            </div>
-          </div>
-          <div class="feature-item">
-            <div class="feature-icon">📐</div>
-            <div>
-              <div class="feature-title">Camera Angle Aware</div>
-              <div class="feature-body">Analysis adapts to your camera position. Side-on, front, rear, and 45-degree referee angles each have specific guidance and adjusted confidence levels.</div>
-            </div>
-          </div>
+          <div class="feature-item"><div class="feature-icon">🏋️</div><div><div class="feature-title">WPP Rule Adherence</div><div class="feature-body">Seven rules assessed individually — start position, chest touch, pause quality, lockout, bar path, alignment, and pressing symmetry. Each scored Pass, Warning, or Fail.</div></div></div>
+          <div class="feature-item"><div class="feature-icon">⚡</div><div><div class="feature-title">Velocity Estimate</div><div class="feature-body">AI-estimated mean concentric velocity gives a directional read on bar speed — useful for load management and competition readiness without extra equipment.</div></div></div>
+          <div class="feature-item"><div class="feature-icon">🎯</div><div><div class="feature-title">Referee Risk Assessment</div><div class="feature-body">Every analysis ends with a clear verdict — Green, Amber, or Red — indicating the likelihood of white lights and flagging the specific areas a WPP head referee would scrutinise.</div></div></div>
+          <div class="feature-item"><div class="feature-icon">📄</div><div><div class="feature-title">Editable PDF Report</div><div class="feature-body">Edit any text before exporting. Share a branded PDF report with your athlete or coaching team. All data, no fluff.</div></div></div>
+          <div class="feature-item"><div class="feature-icon">📐</div><div><div class="feature-title">Camera Angle Aware</div><div class="feature-body">Analysis adapts to your camera position. Side-on, front, rear, and 45-degree referee angles each have specific guidance and adjusted confidence levels.</div></div></div>
         </div>
       </div>
       <div class="rules-visual reveal">
@@ -357,26 +299,10 @@ footer { border-top: 1px solid var(--card-border); padding: 40px 0; }
     <div class="section-eyebrow">Who it's for</div>
     <h2 class="section-headline">Built for anyone<br>chasing white lights</h2>
     <div class="who-grid reveal">
-      <div class="who-card">
-        <div class="who-icon">🏋️</div>
-        <div class="who-title">Competitive Para Powerlifters</div>
-        <div class="who-body">Understand the technical risks a WPP referee is likely to flag before you step on the platform. Use RefLight in competition prep to identify and address the areas most likely to cost white lights — pause duration, lockout symmetry, body stability.</div>
-      </div>
-      <div class="who-card">
-        <div class="who-icon">📋</div>
-        <div class="who-title">Coaches &amp; Performance Staff</div>
-        <div class="who-body">Analyse multiple athletes across a training block. Export branded PDF reports to share with athletes and support staff. Get an objective, rulebook-based read on referee risk for technique you see every day.</div>
-      </div>
-      <div class="who-card">
-        <div class="who-icon">🌍</div>
-        <div class="who-title">Athletes Without Regular Coaching</div>
-        <div class="who-body">Not everyone has access to a technical coach who knows WPP rules. RefLight gives any athlete — anywhere in the world — the same level of feedback a national programme athlete gets in training.</div>
-      </div>
-      <div class="who-card">
-        <div class="who-icon">📈</div>
-        <div class="who-title">Competition Prep Monitoring</div>
-        <div class="who-body">Track technical consistency across a competition prep block. Analyse the same attempt at different loads to understand how technique changes under maximal effort — and address it before it matters.</div>
-      </div>
+      <div class="who-card"><div class="who-icon">🏋️</div><div class="who-title">Competitive Para Powerlifters</div><div class="who-body">Understand the technical risks a WPP referee is likely to flag before you step on the platform. Use RefLight in competition prep to identify and address the areas most likely to cost white lights — pause duration, lockout symmetry, body stability.</div></div>
+      <div class="who-card"><div class="who-icon">📋</div><div class="who-title">Coaches &amp; Performance Staff</div><div class="who-body">Analyse multiple athletes across a training block. Export branded PDF reports to share with athletes and support staff. Get an objective, rulebook-based read on referee risk for technique you see every day.</div></div>
+      <div class="who-card"><div class="who-icon">🌍</div><div class="who-title">Athletes Without Regular Coaching</div><div class="who-body">Not everyone has access to a technical coach who knows WPP rules. RefLight gives any athlete — anywhere in the world — the same level of feedback a national programme athlete gets in training.</div></div>
+      <div class="who-card"><div class="who-icon">📈</div><div class="who-title">Competition Prep Monitoring</div><div class="who-body">Track technical consistency across a competition prep block. Analyse the same attempt at different loads to understand how technique changes under maximal effort — and address it before it matters.</div></div>
     </div>
   </div>
 </section>
@@ -433,7 +359,7 @@ footer { border-top: 1px solid var(--card-border); padding: 40px 0; }
         <a href="https://buy.stripe.com/test_00w00c2bMacT8ZM6k96Zy02" class="price-cta outline" target="_blank">Buy Squad Pack</a>
       </div>
     </div>
-    <p class="price-note">Secure payment via Stripe. Credits confirmed within 24 hours of payment. Test mode — no real payments taken yet.<br>Questions? <a href="mailto:helloreflight@gmail.com" style="color:var(--gold);text-decoration:none;">helloreflight@gmail.com</a></p>
+    <p class="price-note">Secure payment via Stripe. Credits confirmed within 24 hours of payment.<br>Questions? <a href="mailto:helloreflight@gmail.com" style="color:var(--gold);text-decoration:none;">helloreflight@gmail.com</a></p>
   </div>
 </section>
 
@@ -442,30 +368,12 @@ footer { border-top: 1px solid var(--card-border); padding: 40px 0; }
     <div class="section-eyebrow" style="justify-content:center;">FAQ</div>
     <h2 class="section-headline" style="text-align:center;">Common questions</h2>
     <div class="faq-list">
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">What camera angle should I use? <span class="faq-icon">+</span></div>
-        <div class="faq-a">The 45-degree referee angle — positioned diagonally from the end of the bench at roughly bench height — gives the most accurate rule adherence assessment. This is the same angle a WPP head referee sits at in competition, giving a clear view of elbow lockout, pause quality, and chest contact simultaneously. Side-on is useful for bar path and velocity but cannot reliably assess simultaneous lockout.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">How accurate is the AI analysis? <span class="faq-icon">+</span></div>
-        <div class="faq-a">RefLight is designed as a coaching and preparation tool, not a replacement for a qualified referee or coach. The analysis is based on visual frame extraction from your video, which means accuracy depends on video quality and camera angle. The velocity estimate is an AI visual estimate, not a calibrated measurement. Used consistently, it provides reliable directional feedback on technique and referee risk areas.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">Does RefLight cover IPF able-bodied powerlifting? <span class="faq-icon">+</span></div>
-        <div class="faq-a">RefLight currently focuses on World Para Powerlifting (WPP) rules for para powerlifting bench press. IPF able-bodied analysis covering squat, bench press, and deadlift is on the roadmap. Join our mailing list to be notified when it launches.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">What happens to my video after analysis? <span class="faq-icon">+</span></div>
-        <div class="faq-a">Your video is uploaded to our server for processing, key frames are extracted for analysis, and the video file is deleted immediately after frame extraction. We never store your video permanently. Frame data is used for analysis only and is not retained after your report is generated.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">Do credits expire? <span class="faq-icon">+</span></div>
-        <div class="faq-a">No. Credits never expire. Buy a pack when you need it and use them at your own pace — across a competition prep block, a full season, or across multiple athletes.</div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q" onclick="toggleFaq(this)">What video formats are supported? <span class="faq-icon">+</span></div>
-        <div class="faq-a">RefLight accepts MP4 and MOV files, which covers all modern smartphones. You can also record directly in the app on mobile. Single rep clips work best — ideally 10-30 seconds covering the full lift from setup to rack.</div>
-      </div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">What camera angle should I use? <span class="faq-icon">+</span></div><div class="faq-a">The 45-degree referee angle — positioned diagonally from the end of the bench at roughly bench height — gives the most accurate rule adherence assessment. This is the same angle a WPP head referee sits at in competition, giving a clear view of elbow lockout, pause quality, and chest contact simultaneously. Side-on is useful for bar path and velocity but cannot reliably assess simultaneous lockout.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">How accurate is the AI analysis? <span class="faq-icon">+</span></div><div class="faq-a">RefLight is designed as a coaching and preparation tool, not a replacement for a qualified referee or coach. The analysis is based on visual frame extraction from your video, which means accuracy depends on video quality and camera angle. The velocity estimate is an AI visual estimate, not a calibrated measurement. Used consistently, it provides reliable directional feedback on technique and referee risk areas.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Does RefLight cover IPF able-bodied powerlifting? <span class="faq-icon">+</span></div><div class="faq-a">RefLight currently focuses on World Para Powerlifting (WPP) rules for para powerlifting bench press. IPF able-bodied analysis covering squat, bench press, and deadlift is on the roadmap. Join our mailing list to be notified when it launches.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">What happens to my video after analysis? <span class="faq-icon">+</span></div><div class="faq-a">Your video is uploaded to our server for processing, key frames are extracted for analysis, and the video file is deleted immediately after frame extraction. We never store your video permanently. Frame data is used for analysis only and is not retained after your report is generated.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">Do credits expire? <span class="faq-icon">+</span></div><div class="faq-a">No. Credits never expire. Buy a pack when you need it and use them at your own pace — across a competition prep block, a full season, or across multiple athletes.</div></div>
+      <div class="faq-item"><div class="faq-q" onclick="toggleFaq(this)">What video formats are supported? <span class="faq-icon">+</span></div><div class="faq-a">RefLight accepts MP4 and MOV files, which covers all modern smartphones. You can also record directly in the app on mobile. Single rep clips work best — ideally 10-30 seconds covering the full lift from setup to rack.</div></div>
     </div>
   </div>
 </section>
@@ -485,43 +393,17 @@ footer { border-top: 1px solid var(--card-border); padding: 40px 0; }
       <div class="footer-links">
         <a href="para-lift-analyser-app.html" class="footer-link">Open App</a>
         <a href="mailto:helloreflight@gmail.com" class="footer-link">Contact</a>
-        <a href="#" class="footer-link">Privacy Policy</a>
-        <a href="#" class="footer-link">Terms</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="terms.html" class="footer-link">Terms</a>
       </div>
     </div>
   </div>
 </footer>
 
-<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">×</button>
-    <div class="modal-title">Get Your Credits</div>
-    <div class="modal-subtitle">Secure payment via Stripe — credits confirmed within 24 hours</div>
-    <div class="modal-pack-summary">
-      <div class="modal-pack-name" id="modalPackName">—</div>
-      <div class="modal-pack-price" id="modalPackPrice">—</div>
-    </div>
-    <div style="background:rgba(201,168,76,0.08);border:1px solid var(--card-border);border-radius:10px;padding:16px;text-align:center;">
-      <div style="font-size:13px;color:var(--grey-light);line-height:1.7;">
-        Stripe payment integration coming very soon.<br>
-        To purchase credits now, email us at<br>
-        <a href="mailto:helloreflight@gmail.com" style="color:var(--gold);font-weight:600;">helloreflight@gmail.com</a><br>
-        and we'll get you set up manually within 24 hours.
-      </div>
-    </div>
-    <p class="modal-note">🔒 Payments secured by Stripe · Credits never expire · No subscription</p>
-  </div>
-</div>
-
 <script>
 const reveals = document.querySelectorAll('.reveal');
 const observer = new IntersectionObserver((entries) => {
-  entries.forEach((e, i) => {
-    if (e.isIntersecting) {
-      setTimeout(() => e.target.classList.add('visible'), i * 80);
-      observer.unobserve(e.target);
-    }
-  });
+  entries.forEach((e, i) => { if (e.isIntersecting) { setTimeout(() => e.target.classList.add('visible'), i * 80); observer.unobserve(e.target); } });
 }, { threshold: 0.1 });
 reveals.forEach(r => observer.observe(r));
 function toggleFaq(el) {
@@ -530,20 +412,7 @@ function toggleFaq(el) {
   document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
   if (!isOpen) item.classList.add('open');
 }
-function openModal(name, price) {
-  document.getElementById('modalPackName').textContent = name;
-  document.getElementById('modalPackPrice').textContent = price;
-  document.getElementById('modalOverlay').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal() {
-  document.getElementById('modalOverlay').classList.remove('open');
-  document.body.style.overflow = '';
-}
-function closeModalOutside(e) {
-  if (e.target === document.getElementById('modalOverlay')) closeModal();
-}
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') {} });
 </script>
 </body>
 </html>
