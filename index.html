@@ -24,6 +24,10 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba
 .logo-text .tool { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: var(--white); text-transform: uppercase; line-height: 1; }
 .beta-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; background: rgba(240,168,48,0.15); color: var(--amber); border: 1px solid rgba(240,168,48,0.4); padding: 3px 8px; border-radius: 4px; vertical-align: middle; }
 .nav-cta { display: flex; align-items: center; gap: 16px; }
+@media (max-width: 640px) {
+  .nav-link { display: none; }
+  .nav-inner { gap: 8px; }
+}
 .nav-link { font-size: 13px; font-weight: 500; color: var(--grey-light); text-decoration: none; transition: color 0.2s; }
 .nav-link:hover { color: var(--gold); }
 .btn-nav { background: var(--gold); color: var(--navy); font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 9px 20px; border-radius: 8px; text-decoration: none; transition: background 0.2s, transform 0.1s; }
@@ -190,13 +194,13 @@ footer { border-top: 1px solid var(--card-border); padding: 40px 0; }
 
 <section class="hero">
   <div class="container">
-    <div class="hero-eyebrow">Para Powerlifting · AI Analysis · WPP Rules · <span class="beta-badge">Beta</span></div>
+    <div class="hero-eyebrow">World Para Powerlifting (WPP) · AI Analysis · <span class="beta-badge">Beta</span></div>
     <h1 class="hero-headline">
       <span class="line-white">Know your whites</span>
       <span class="line-gold">before your lights.</span>
     </h1>
     <p class="hero-sub">
-      Upload a training video. Get <strong>in-depth referee risk assessment</strong> before you compete — scored against World Para Powerlifting rules, with coaching cues you can use the same session.
+      Upload a training video. Get <strong>in-depth referee risk assessment</strong> before you compete — scored against World Para Powerlifting (WPP) rules, with coaching cues you can use the same session.
     </p>
     <div class="hero-actions">
       <a href="#pricing" class="btn-primary">Get Started</a>
