@@ -32,7 +32,6 @@ const upload = multer({
   limits: { fileSize: 200 * 1024 * 1024 },
 });
 
-// Get video duration in seconds
 function getVideoDuration(videoPath) {
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(videoPath, function(err, metadata) {
@@ -43,7 +42,6 @@ function getVideoDuration(videoPath) {
   });
 }
 
-// Extract evenly spaced survey frames for lift detection
 function extractSurveyFrames(videoPath, count) {
   return new Promise((resolve, reject) => {
     const tmpDir = os.tmpdir();
@@ -74,17 +72,12 @@ function extractSurveyFrames(videoPath, count) {
   });
 }
 
-// Extract exactly frameCount frames sequentially at equal intervals within a confirmed window
-// Sequential extraction avoids race conditions and guarantees consistent frame count
 async function extractFramesInWindow(videoPath, windowStart, windowEnd, frameCount) {
   const tmpDir = os.tmpdir();
-  
-  // Add small safety margins
   const safeStart = Math.max(0, windowStart - 0.1);
   const safeEnd = windowEnd + 0.3;
   const windowDuration = safeEnd - safeStart;
   
-  // Calculate equal interval timestamps
   const timestamps = [];
   for (let i = 0; i < frameCount; i++) {
     const fraction = frameCount === 1 ? 0.5 : i / (frameCount - 1);
@@ -93,7 +86,6 @@ async function extractFramesInWindow(videoPath, windowStart, windowEnd, frameCou
   }
   
   console.log('Extracting ' + frameCount + ' frames sequentially from ' + safeStart.toFixed(2) + 's to ' + safeEnd.toFixed(2) + 's');
-  console.log('Timestamps:', timestamps.map(function(t) { return t.toFixed(2); }).join(', '));
   
   const frames = [];
   
@@ -127,7 +119,6 @@ async function extractFramesInWindow(videoPath, windowStart, windowEnd, frameCou
       }
     } catch(err) {
       console.log('Frame ' + (i+1) + ' failed at ' + ts.toFixed(2) + 's:', err.message);
-      // Try with a slightly adjusted timestamp
       const adjustedTs = Math.max(0, ts - 0.1);
       try {
         const filename2 = 'rlframe-retry-' + i + '-' + Date.now() + '.png';
@@ -163,7 +154,6 @@ async function extractFramesInWindow(videoPath, windowStart, windowEnd, frameCou
   return frames;
 }
 
-// Pass 1: Detect lift start and end using survey frames
 async function detectLiftBoundaries(surveyFrames, duration) {
   const frameInterval = duration / surveyFrames.length;
   
@@ -186,14 +176,8 @@ Respond ONLY with JSON: {"lift_start_frame": N, "unrack_frame": N, "chest_touch_
   ];
 
   surveyFrames.forEach(function(frame, i) {
-    content.push({
-      type: 'text',
-      text: 'Frame ' + (i + 1) + ':'
-    });
-    content.push({
-      type: 'image',
-      source: { type: 'base64', media_type: frame.mediaType, data: frame.base64 }
-    });
+    content.push({ type: 'text', text: 'Frame ' + (i + 1) + ':' });
+    content.push({ type: 'image', source: { type: 'base64', media_type: frame.mediaType, data: frame.base64 } });
   });
 
   const response = await client.messages.create({
@@ -209,7 +193,6 @@ Respond ONLY with JSON: {"lift_start_frame": N, "unrack_frame": N, "chest_touch_
   const boundaries = JSON.parse(match[0]);
   const frameInterval2 = duration / surveyFrames.length;
   
-  // Convert frame numbers to timestamps
   return {
     liftStart: Math.max(0, (boundaries.lift_start_frame - 1) * frameInterval2),
     unrack: Math.max(0, (boundaries.unrack_frame - 1) * frameInterval2),
@@ -220,21 +203,16 @@ Respond ONLY with JSON: {"lift_start_frame": N, "unrack_frame": N, "chest_touch_
   };
 }
 
-// Generate descriptive labels for equal-interval frames based on position within lift
-// Boundaries are used only for labelling, not for timestamp calculation
 function buildFrameLabels(frameCount, boundaries) {
   const { liftStart, unrack, chestTouch, lockout, liftEnd } = boundaries;
   const totalDuration = liftEnd - liftStart;
-  
   const labels = [];
   
   for (let i = 0; i < frameCount; i++) {
     const fraction = frameCount === 1 ? 0.5 : i / (frameCount - 1);
     const estimatedTime = liftStart + fraction * totalDuration;
-    
     let label;
     
-    // Assign label based on estimated position within lift phases
     if (estimatedTime <= liftStart + (unrack - liftStart) * 0.7) {
       label = 'SETUP PHASE - Assess body position, bench contact, stability before lift begins. WPP START command readiness. Write feedback referring to the video not frame numbers.';
     } else if (estimatedTime <= unrack + (chestTouch - unrack) * 0.3) {
@@ -293,8 +271,37 @@ Be conservative - only assess what is clearly visible. Mark uncertain areas as W
   }
 }
 
-async function analyzeFrames(labelledFrames, athlete, sessionType, weightClass, bodyweight, load, coachNotes, angle, boundaries) {
+function buildVelocityInstructions(angle, plateCalibrated) {
+  if (angle !== 'Side-on') {
+    return `VELOCITY: This camera angle does not support velocity estimation. Set "bar_speed_estimate" to null, "velocity_category" to null, and "velocity_coaching_note" to null. Do not attempt to estimate velocity from this angle.`;
+  }
+  
+  if (plateCalibrated) {
+    return `VELOCITY - PLATE-CALIBRATED ESTIMATION (SIDE-ON VIEW):
+The user has confirmed that a 450mm diameter competition or Olympic bumper plate is visible in the video. Use this as your calibration reference.
+
+CALIBRATION METHOD:
+1. Identify the plate in the frame. Standard 450mm diameter plates are typically 20kg or 25kg calibrated steel competition plates or Olympic bumper plates.
+2. Estimate the plate's pixel diameter in the frame. This gives you a pixels-per-mm ratio: pixels_per_mm = plate_pixel_diameter / 450.
+3. Track the bar's vertical displacement between concentric frames (chest touch to lockout only — do NOT include descent or setup).
+4. Convert pixel displacement to real-world millimetres using your calibration ratio.
+5. Calculate mean concentric velocity: total bar displacement (mm) converted to metres, divided by total concentric time (seconds).
+6. Report as a numeric value in m/s to 2 decimal places.
+
+CRITICAL CONSTRAINTS:
+- Measure CONCENTRIC PHASE ONLY: from the moment the bar leaves the chest to the moment of full lockout. Do not include the descent, pause, or rack phases.
+- If the plate is partially obscured or you cannot confidently estimate its pixel diameter, still attempt calibration but note the uncertainty.
+- This is still an AI visual estimate, not a laser-measured value. Be conservative rather than overconfident.
+- "velocity_category": assign based on numeric value — "Explosive" if >0.80, "Optimal" if 0.55–0.80, "Grind" if 0.35–0.54, "Maximal Effort" if <0.35.
+- "velocity_coaching_note": one sentence stating the coaching implication. Do NOT begin with the category name.`;
+  } else {
+    return `VELOCITY: The user has not confirmed a 450mm calibration plate is visible. Set "bar_speed_estimate" to null, "velocity_category" to null, and "velocity_coaching_note" to null. Do not attempt to estimate velocity without plate calibration on a side-on view.`;
+  }
+}
+
+async function analyzeFrames(labelledFrames, athlete, sessionType, weightClass, bodyweight, load, coachNotes, angle, boundaries, plateCalibrated) {
   const angleGuidance = buildAngleGuidance(angle);
+  const velocityInstructions = buildVelocityInstructions(angle, plateCalibrated);
   
   const systemPrompt = `You are an elite technical analyst for RefLight, specialising in para powerlifting referee outcome prediction. You assess bench press attempts against World Para Powerlifting (WPP) Technical Rules.
 
@@ -324,6 +331,8 @@ WPP RULES TO ASSESS:
 
 Only assess what is visible from the stated camera angle. Apply the angle limitations strictly.
 
+${velocityInstructions}
+
 LANGUAGE STYLE - CRITICAL:
 Write all feedback in natural coaching language. You are a coach describing what you see in a video, not a technical system reporting data.
 - NEVER reference frames, frame numbers, timestamps, or seconds. No "Frame 4", "at 3.94s", "frames 6-7", "the lockout frame", "the supposed lockout frame", "frame sequence", "available frames" or any similar phrasing.
@@ -333,15 +342,9 @@ Write all feedback in natural coaching language. You are a coach describing what
 
 PEOPLE IN THE VIDEO — CRITICAL:
 Training videos may include other people such as coaches or handlers. Apply these rules strictly:
-- NEVER mention, describe, or reference any person other than the athlete in any part of your feedback. Not in the summary, not in rule details, not in corrections, not anywhere.
-- If the view of any moment is partially limited, state only that the camera angle does not allow a clear assessment at that point. Never attribute a limited view to another person being in the frame.
-- Focus entirely on what is visible of the athlete and the bar. Describe only the athlete's technique and the bar's movement.
-
-VELOCITY:
-- "bar_speed_estimate" must be a numeric value in m/s (e.g. 0.35), estimated from bar displacement between concentric frames.
-- This is an AI visual estimate only — not a calibrated measurement. It should be treated as a directional indicator, not an absolute value.
-- "velocity_category": assign based on the numeric value — "Explosive" if >0.80, "Optimal" if 0.55–0.80, "Grind" if 0.35–0.54, "Maximal Effort" if <0.35.
-- "velocity_coaching_note": one sentence starting directly with the coaching implication. Do NOT begin with the category name. Example: "Consider reducing load or using intent cues to restore bar speed." Not: "Grind — consider reducing load..."
+- NEVER mention, describe, or reference any person other than the athlete in any part of your feedback.
+- If the view of any moment is partially limited, state only that the camera angle does not allow a clear assessment at that point.
+- Focus entirely on what is visible of the athlete and the bar.
 
 Respond ONLY with valid JSON:
 {
@@ -349,16 +352,16 @@ Respond ONLY with valid JSON:
   "setup_score": 0-100,
   "pause_score": 0-100,
   "press_score": 0-100,
-  "bar_speed_estimate": <number e.g. 0.35>,
-  "velocity_category": "Explosive or Optimal or Grind or Maximal Effort",
-  "velocity_coaching_note": "coaching implication starting directly with the action or observation — do not repeat the category name",
+  "bar_speed_estimate": <number in m/s or null if not applicable>,
+  "velocity_category": "Explosive or Optimal or Grind or Maximal Effort or null",
+  "velocity_coaching_note": "coaching implication or null",
   "verdict": "Green or Amber or Red",
   "verdict_headline": "max 8 words - referee outcome prediction",
   "summary": "2-3 sentences. State what the inferred referee outcome would be and why. Reference angle limitations if relevant. Do not mention any person other than the athlete.",
   "rule_adherence": [
     {"rule": "Start Position and Body Stability", "status": "Pass or Fail or Warning", "detail": "specific observation with referee outcome prediction"},
     {"rule": "Descent and Chest Touch", "status": "Pass or Fail or Warning", "detail": "specific observation"},
-    {"rule": "Pause Quality", "status": "Pass or Fail or Warning", "detail": "WPP: was the bar completely motionless and held long enough? Lifter does not wait for a referee PRESS command — assess stillness and duration only."},
+    {"rule": "Pause Quality", "status": "Pass or Fail or Warning", "detail": "WPP: was the bar completely motionless and held long enough?"},
     {"rule": "Elbow Lockout - Simultaneous and Full", "status": "Pass or Fail or Warning", "detail": "assess or note angle limitation"},
     {"rule": "Bar Path and Steering", "status": "Pass or Fail or Warning", "detail": "specific observation"},
     {"rule": "Elbow and Wrist Alignment", "status": "Pass or Fail or Warning", "detail": "specific observation or note angle limitation"},
@@ -366,23 +369,16 @@ Respond ONLY with valid JSON:
   ],
   "strengths": ["strength 1", "strength 2", "strength 3"],
   "technical_corrections": ["correction with specific WPP rule reference", "correction 2"],
-  "coaching_cues": ["cue 1 - short and gym-floor ready", "cue 2", "cue 3"],
-  "rep_quality_profile": [85]
+  "coaching_cues": ["cue 1 - short and gym-floor ready", "cue 2", "cue 3"]
 }`;
 
-  const userPrompt = 'Athlete: ' + athlete + '\nWeight class: ' + weightClass + '\nBodyweight: ' + bodyweight + '\nSession: ' + sessionType + ' at ' + load + '\nCamera angle: ' + angle + '\nCoach notes: ' + (coachNotes || 'None') + '\n\nLift detection notes: ' + (boundaries.notes || 'Not available') + '\n\nAnalyse these ' + labelledFrames.length + ' frames. Each frame is labelled with its position in the lift. Apply WPP rules inferring where referee commands would have been given. Respect camera angle limitations strictly. Return JSON only.';
+  const userPrompt = 'Athlete: ' + athlete + '\nWeight class: ' + weightClass + '\nBodyweight: ' + bodyweight + '\nSession: ' + sessionType + ' at ' + load + '\nCamera angle: ' + angle + '\nPlate calibration confirmed: ' + (plateCalibrated ? 'YES - 450mm plate visible' : 'NO') + '\nCoach notes: ' + (coachNotes || 'None') + '\n\nLift detection notes: ' + (boundaries.notes || 'Not available') + '\n\nAnalyse these ' + labelledFrames.length + ' frames. Each frame is labelled with its position in the lift. Apply WPP rules inferring where referee commands would have been given. Respect camera angle limitations strictly. Return JSON only.';
 
   const content = [{ type: 'text', text: userPrompt }];
   
   labelledFrames.forEach(function(frame) {
-    content.push({
-      type: 'text',
-      text: 'FRAME [' + frame.label + '] at ' + frame.timestamp.toFixed(2) + 's:'
-    });
-    content.push({
-      type: 'image',
-      source: { type: 'base64', media_type: frame.mediaType, data: frame.base64 }
-    });
+    content.push({ type: 'text', text: 'FRAME [' + frame.label + '] at ' + frame.timestamp.toFixed(2) + 's:' });
+    content.push({ type: 'image', source: { type: 'base64', media_type: frame.mediaType, data: frame.base64 } });
   });
 
   const response = await client.messages.create({
@@ -413,24 +409,21 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
     const load = req.body.load || 'Not specified';
     const coachNotes = req.body.coachNotes || '';
     const angle = req.body.angle || 'Side-on';
+    const plateCalibrated = req.body.plateCalibrated === 'true';
 
-    console.log('Analysing for ' + athlete + ' at ' + load + ' - ' + angle);
+    console.log('Analysing for ' + athlete + ' at ' + load + ' - ' + angle + ' - plate calibrated: ' + plateCalibrated);
 
-    // Get video duration
     const duration = await getVideoDuration(req.file.path);
     console.log('Video duration: ' + duration.toFixed(1) + 's');
 
-    // Pass 1: Extract survey frames for lift detection
     const surveyCount = Math.min(12, Math.max(6, Math.floor(duration * 1.5)));
     console.log('Extracting ' + surveyCount + ' survey frames for lift detection...');
     const surveyFrames = await extractSurveyFrames(req.file.path, surveyCount);
 
-    // Detect lift boundaries
     console.log('Detecting lift boundaries...');
     const boundaries = await detectLiftBoundaries(surveyFrames, duration);
     console.log('Boundaries detected:', JSON.stringify(boundaries));
 
-    // Pass 2: Extract exactly 12 frames at equal intervals within confirmed lift window
     const windowStart = Math.max(0, boundaries.liftStart);
     const windowEnd = Math.min(duration, boundaries.liftEnd + 0.5);
     const frameCount = 12;
@@ -439,17 +432,14 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
     
     const targetedFrames = await extractFramesInWindow(req.file.path, windowStart, windowEnd, frameCount);
 
-    // Clean up video file
     try { fs.unlinkSync(req.file.path); } catch(e) {}
 
     if (targetedFrames.length === 0) {
       return res.status(400).json({ error: 'Could not extract frames from video' });
     }
 
-    // Generate labels based on frame positions within lift phases
     const labels = buildFrameLabels(targetedFrames.length, boundaries);
     
-    // Label frames
     const labelledFrames = targetedFrames.map(function(frame, i) {
       return {
         base64: frame.base64,
@@ -461,8 +451,7 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
 
     console.log('Sending ' + labelledFrames.length + ' labelled frames to Claude...');
 
-    // Analyse
-    const analysis = await analyzeFrames(labelledFrames, athlete, sessionType, weightClass, bodyweight, load, coachNotes, angle, boundaries);
+    const analysis = await analyzeFrames(labelledFrames, athlete, sessionType, weightClass, bodyweight, load, coachNotes, angle, boundaries, plateCalibrated);
 
     res.json({
       success: true,
@@ -471,6 +460,7 @@ app.post('/api/analyze', upload.single('video'), async function(req, res) {
         framesAnalyzed: labelledFrames.length,
         videoDuration: duration,
         boundaries: boundaries,
+        plateCalibrated: plateCalibrated,
         timestamp: new Date().toISOString()
       }
     });
