@@ -250,12 +250,35 @@ For lockout: you have clear view of both elbows. Assess simultaneous lockout wit
 For pause: you can see the bar on the chest clearly. Assess pause quality with HIGH CONFIDENCE.`;
   } else if (angle === 'Side-on') {
     return `CAMERA ANGLE: Side-on view (perpendicular to bench).
-CAN ASSESS with high confidence: bar path (vertical and horizontal drift), body position relative to bench, descent control, sticking point location, bar speed estimation if plates are visible.
-CANNOT reliably assess: simultaneous elbow lockout (one arm obscures the other), elbow symmetry, uneven pressing height.
-IMPORTANT LIMITATIONS - you MUST apply these:
-- Elbow Lockout Simultaneous and Full: Mark as WARNING. State "Cannot confirm simultaneous lockout from side-on view. One arm obscures the other. Referee angle required for definitive lockout assessment."
-- Uneven Pressing: Mark as WARNING. State "Cannot confirm pressing symmetry from side-on view. Front or referee angle required."
-Do NOT mark these as Pass or Fail from side-on.`;
+
+WHAT CAN BE ASSESSED FROM SIDE-ON:
+- Bar path in the sagittal plane (vertical travel, forward/backward drift)
+- Descent control and bar speed on the way down
+- Sticking point location during the concentric phase
+- General setup: bridging, head position, foot placement (front-to-back only)
+- Concentric mean velocity (only when a 450mm plate is visible and calibration confirmed)
+
+WHAT CANNOT BE ASSESSED FROM SIDE-ON — MANDATORY RULES:
+You MUST apply every one of the following. These are not optional. Do not attempt to assess these from a side-on angle regardless of what you think you can see.
+
+1. DESCENT AND CHEST TOUCH: Mark as WARNING.
+   Detail: "Chest contact cannot be confirmed from a side-on view. The loaded plate sits between the camera and the bar-to-chest contact point, obscuring the moment of touch. A 45-degree referee angle is required to assess chest contact."
+
+2. PAUSE QUALITY: Mark as WARNING.
+   Detail: "Pause quality cannot be reliably assessed from a side-on view. Chest contact is not visible from this angle, meaning the start of the pause cannot be confirmed. A 45-degree referee angle is required to assess pause stillness and duration."
+
+3. ELBOW LOCKOUT — SIMULTANEOUS AND FULL: Mark as WARNING.
+   Detail: "Simultaneous elbow lockout cannot be assessed from a side-on view. One arm is directly behind the other, making it impossible to confirm both elbows locked out at the same moment. A 45-degree referee angle is required for lockout assessment."
+
+4. ELBOW AND WRIST ALIGNMENT: Mark as WARNING.
+   Detail: "Elbow and wrist alignment relative to the bar cannot be assessed from a side-on view. The lateral position of the elbows is not visible from this angle. A 45-degree or front angle is required."
+
+5. UNEVEN PRESSING: Mark as WARNING.
+   Detail: "Pressing symmetry cannot be assessed from a side-on view. Any height differential between the left and right sides of the bar is not visible from this angle. A front or 45-degree angle is required."
+
+6. START POSITION AND BODY STABILITY — PARTIAL ONLY: You may comment on front-to-back body position (bridging, head, feet on floor) but you MUST NOT comment on lateral stability, lateral shifting, or shoulder/buttock contact symmetry as these are not visible from this angle.
+
+STRICT RULE: Do NOT mark any of items 1-5 as Pass or Fail. They must all be Warning. Any attempt to assess these from side-on is inaccurate and misleading. The only rules you may give a Pass or Fail on from side-on are Bar Path and Steering, and the front-to-back elements of Start Position and Body Stability.`;
   } else if (angle === 'Front') {
     return `CAMERA ANGLE: Front-on view (from head end of bench).
 CAN ASSESS with high confidence: elbow symmetry, uneven pressing, lateral bar drift, body width stability.
