@@ -137,10 +137,11 @@ footer{border-top:1px solid var(--card-border);padding:40px 0;margin-top:60px;}
       <li>The video is uploaded to our secure server for processing</li>
       <li>Key frames are extracted from the video for AI analysis</li>
       <li>The original video file is <strong>deleted immediately</strong> after frame extraction</li>
-      <li>Extracted frames are sent to the Anthropic Claude API for analysis and are not retained after the report is generated</li>
+      <li>Extracted frames are sent to the Anthropic Claude API for analysis. Anthropic's API does not use data for model training and deletes API logs within 7 days. Frames are not retained beyond this window.</li>
       <li>The analysis report is returned to you in the browser session only</li>
     </ol>
     <p>We do not store, archive, or retain video footage. No video data is shared with third parties beyond the frame extraction process described above.</p>
+    <p><strong>AI model training:</strong> Your video and extracted frames are never used to train AI models. RefLight uses the Anthropic Claude API under Commercial Terms, which explicitly prohibit the use of API data for model training. This is confirmed by Anthropic's API policy, which states that API inputs and outputs are not used for training purposes.</p>
     <p>Athlete names and session details entered at the time of analysis are used only to generate the report and are not stored in any database.</p>
   </div>
 
@@ -158,7 +159,7 @@ footer{border-top:1px solid var(--card-border);padding:40px 0;margin-top:60px;}
     <div class="section-title">6. Who we share data with</div>
     <p>We use a small number of trusted third-party services to deliver RefLight:</p>
     <ul>
-      <li><strong>Anthropic (Claude API)</strong> — extracted frames are sent to Anthropic's API for AI analysis. Anthropic processes this data in accordance with their privacy policy and API terms. Frames are not retained by Anthropic beyond the API request.</li>
+      <li><strong>Anthropic (Claude API)</strong> — extracted frames are sent to Anthropic's Claude API for AI analysis. Anthropic's API is governed by their Commercial Terms, which explicitly exclude API data from model training. API data is never used to train Anthropic's AI models. Anthropic retains API logs for a maximum of 7 days for security purposes, after which they are permanently deleted. Frames sent via the API are not retained beyond this window and are never used for model training or any other purpose.</li>
       <li><strong>Railway</strong> — our hosting provider. Video files are temporarily processed on Railway's servers and deleted immediately after frame extraction.</li>
       <li><strong>Stripe</strong> — payment processing. Stripe handles all card data. We never see or store your payment details. Stripe is PCI DSS compliant.</li>
     </ul>
