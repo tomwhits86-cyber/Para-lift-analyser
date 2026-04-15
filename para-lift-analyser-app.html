@@ -151,6 +151,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .angle-guide{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(201,168,76,0.06);border:1px solid var(--card-border);border-radius:10px;margin-top:-12px;margin-bottom:20px;font-size:12px;}
 .angle-guide-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
 .angle-guide-text{color:var(--grey-light);line-height:1.5;}
+.credits-badge{font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;color:var(--gold);display:none;white-space:nowrap;}
+.logout-btn{background:none;border:none;color:var(--grey);font-size:11px;font-family:"Barlow",sans-serif;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.2s;}
+.logout-btn:hover{color:var(--white);}
 @media print {
   body{background:#0a1628 !important;color:#f4f6fa !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .app{max-width:100%;padding:0 20px;}
@@ -171,9 +174,12 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
       <div class="tool">Lift Analyser</div>
     </div>
   </div>
-  <div class="conn-dot" id="connDot"></div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div id="creditsDisplay" class="credits-badge"><span id="creditsCount">0</span> credits</div>
+    <button class="logout-btn" onclick="logout()">Sign out</button>
+    <div class="conn-dot" id="connDot"></div>
+  </div>
 </header>
-
 <div style="font-size:10px;color:#8a9ab8;text-align:center;padding:6px 16px;margin-bottom:4px;line-height:1.4;">RefLight is an independent coaching tool and is not affiliated with or endorsed by World Para Powerlifting.</div>
 <div class="mode-bar">
   <div class="mode-dot checking" id="modeDot"></div>
@@ -221,8 +227,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
   <div class="angle-guide-icon">📷</div>
   <div class="angle-guide-text" id="angleGuideText">Position camera at 45 degrees from the end of the bench, at referee height (roughly bench height), approximately 2-3 metres away. This gives the best view of elbow lockout, pause, and chest contact.</div>
 </div>
-
-<!-- Plate calibration — only shown when Side-on is selected -->
 <div class="vel-calibration" id="velCalibration">
   <div class="vel-calibration-title">⚡ Velocity Estimation — Plate Calibration Required</div>
   <div class="vel-calibration-note">A plate-calibrated velocity estimate is available for side-on footage. To enable this, a 450mm diameter plate must be clearly visible in the video. Standard 450mm plates are typically a <strong>standard 20kg or 25kg calibrated steel competition plate</strong> or an <strong>Olympic bumper plate</strong>. Confirm below to enable plate-calibrated AI velocity estimation.</div>
@@ -231,7 +235,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
     <span class="vel-calibration-check-label">A 450mm plate (standard 20kg or 25kg competition steel or Olympic bumper plate) is clearly visible in the video</span>
   </label>
 </div>
-
 <div class="upload-section">
   <div class="section-title">Video Upload</div>
   <div class="upload-zone" id="uploadZone">
@@ -278,7 +281,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
   </div>
   <div class="edit-hint">&#9998; Tap any text to edit before exporting PDF</div>
   <div class="score-row" id="scoreRow"></div>
-  <!-- Velocity card — only rendered when side-on + plate calibrated -->
   <div class="vel-card" id="velCard" style="display:none;">
     <div class="vel-icon">&#9889;</div>
     <div>
@@ -316,6 +318,33 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 </div>
 <script>
 const BACKEND = "https://para-lift-analyser-production.up.railway.app";
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+(function(){
+  const token = localStorage.getItem('reflight_token');
+  if(!token){ window.location.href = '/login.html'; return; }
+  fetch(BACKEND+'/api/auth/me', {headers:{'Authorization':'Bearer '+token}})
+    .then(r => { if(r.status===401){ logout(); } return r.json(); })
+    .then(d => { if(d.user){ updateCredits(d.user.credits); } })
+    .catch(()=>{});
+})();
+
+function updateCredits(n) {
+  const el = document.getElementById('creditsDisplay');
+  const cnt = document.getElementById('creditsCount');
+  if(el && cnt){ el.style.display = 'block'; cnt.textContent = n; }
+}
+
+function logout() {
+  const token = localStorage.getItem('reflight_token') || '';
+  fetch(BACKEND+'/api/auth/logout', {method:'POST', headers:{'Authorization':'Bearer '+token}}).catch(()=>{});
+  localStorage.removeItem('reflight_token');
+  localStorage.removeItem('reflight_email');
+  localStorage.removeItem('reflight_credits');
+  window.location.href = '/login.html';
+}
+// ─────────────────────────────────────────────────────────────────────────
+
 let currentFile = null;
 let lastAnalysis = null;
 let lastPlateCalibrated = false;
@@ -383,7 +412,6 @@ async function runAnalysis() {
   const notes=document.getElementById("notes").value;
   const plateCalibrated = angle === 'Side-on' && document.getElementById("plateCalibrated").checked;
   lastPlateCalibrated = plateCalibrated;
-
   document.getElementById("analyseBtn").disabled=true;
   document.getElementById("analyseBtn").classList.add("loading");
   document.getElementById("btnLabel").textContent="Analysing...";
@@ -401,11 +429,20 @@ async function runAnalysis() {
     fd.append("angle",angle);
     fd.append("coachNotes",notes);
     fd.append("plateCalibrated", plateCalibrated ? "true" : "false");
-    const r=await fetch(BACKEND+"/api/analyze",{method:"POST",body:fd});
-    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||"Server error "+r.status);}
+    const token = localStorage.getItem('reflight_token') || '';
+    const r=await fetch(BACKEND+"/api/analyze",{method:"POST",body:fd,headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok){
+      const e=await r.json().catch(()=>({}));
+      if(r.status===402){throw new Error('No credits remaining. Purchase a credit pack at ref-light.co.uk to continue.');}
+      if(r.status===401){logout();return;}
+      throw new Error(e.error||"Server error "+r.status);
+    }
     const data=await r.json();
     lastAnalysis={data,athlete,sessionType,load,angle,plateCalibrated};
     renderResults(data.data,data.metadata,athlete,sessionType,load,angle,plateCalibrated);
+    if(data.metadata && data.metadata.remainingCredits !== undefined){
+      updateCredits(data.metadata.remainingCredits);
+    }
   } catch(err) {
     showErr("Analysis failed: "+err.message);
   } finally {
@@ -445,8 +482,6 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
     const c=s.val>=80?"green":s.val>=60?"amber":"red";
     return "<div class='score-card'><div class='score-lbl'>"+s.label+"</div><div class='score-val "+c+"'>"+(s.val||"-")+"</div><div class='score-sub'>"+s.sub+"</div></div>";
   }).join("");
-
-  // Velocity — only show if side-on AND plate calibrated AND we have a value
   const velCard = document.getElementById("velCard");
   const showVelocity = angle === 'Side-on' && plateCalibrated && d.bar_speed_estimate !== null && d.bar_speed_estimate !== undefined;
   if (showVelocity) {
@@ -464,7 +499,6 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   } else {
     velCard.style.display = "none";
   }
-
   const vcls={Green:"green",Amber:"amber",Red:"red"};
   const vico={Green:"[GOOD]",Amber:"[WARNING]",Red:"[RED LIGHT]"};
   const v=d.verdict||"Amber";
@@ -521,8 +555,6 @@ function exportPDF() {
         doc.setTextColor(...col);doc.setFontSize(18);doc.text(String(val),x+boxW/2,y+17,{align:'center'});
       });
       y+=28;
-
-      // Only include velocity in PDF if side-on + plate calibrated + has value
       const showVelInPDF = angle === 'Side-on' && plateCalibrated && d.bar_speed_estimate !== null && d.bar_speed_estimate !== undefined;
       if (showVelInPDF) {
         const velEl=document.getElementById("velVal");
@@ -540,7 +572,6 @@ function exportPDF() {
         if(velNoteDisplay)doc.text(velNoteDisplay.substring(0,80),margin+4,y+18);
         y+=26;
       }
-
       const vcol=d.verdict==='Green'?green:d.verdict==='Red'?red:amber;
       const hEl=document.querySelector('#verdictEl h3'),pEl=document.querySelector('#verdictEl p');
       const editedHeadline=hEl?hEl.innerText:(d.verdict_headline||d.verdict||'');
@@ -629,7 +660,6 @@ const angleGuides = {
 function updateAngleGuidance() {
   const angle = document.getElementById("angle").value;
   document.getElementById("angleGuideText").textContent = angleGuides[angle] || "";
-  // Show calibration box only for side-on
   const cal = document.getElementById("velCalibration");
   if (angle === "Side-on") {
     cal.classList.add("visible");
