@@ -14,7 +14,8 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^1.4.1",
     "@anthropic-ai/sdk": "^0.15.0",
-    "tmp": "^0.2.1"
+    "tmp": "^0.2.1",
+    "pg": "^8.11.3"
   },
   "engines": {
     "node": "18.x"
