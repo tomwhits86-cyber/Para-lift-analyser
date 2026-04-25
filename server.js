@@ -508,11 +508,24 @@ WPP RULES TO ASSESS:
 
 ${velocityInstructions}
 
+SCORING GUIDANCE FOR SIDE-ON ANGLE:
+If the camera angle is Side-on, apply these scoring rules:
+- overall_score: Score based ONLY on what is visible — bar path quality, descent control, concentric drive, setup position. Do NOT penalise for rules you cannot assess.
+- setup_score: Score on visible setup — bridging, head position, feet on floor (front-to-back only).
+- pause_score: Score on DESCENT CONTROL and bar settlement on chest only. Since chest contact cannot be confirmed, base this on controlled descent and apparent bar stillness. Do NOT score actual pause quality.
+- press_score: Score on bar path quality through the concentric phase. This is the PRIMARY value of side-on analysis for press quality. Assess the following:
+  PENALISE: Early vertical movement — if the bar moves predominantly upward before tracking back toward the shoulder/rack position, this indicates a poorly directed force vector, pushing the bar into mechanical disadvantage.
+  PENALISE: Disproportionate early horizontal movement toward the neck/head — this is indicative of elbow flare and poor bar path control in the initial drive phase.
+  REWARD: A smooth arc from chest contact back toward the rack position over the shoulder — this is the optimal bar path indicating well-directed force and efficient pressing mechanics.
+  A score above 80 requires a smooth arc with no early vertical spike and no early neck-ward drift. A score below 60 indicates one or both fault patterns are present.
+- summary: For side-on, focus on bar speed and bar path findings. Do not make referee outcome predictions for rules that cannot be assessed from this angle. Frame the summary as "bar path and velocity analysis" rather than a full referee risk assessment.
+
 LANGUAGE STYLE:
 - NEVER reference frames, frame numbers, or timestamps.
 - Use natural coaching language: "In the video...", "During the descent...", "At chest contact...", "Through the concentric phase..."
 - NEVER mention any person other than the athlete.
 - Write as an expert coach giving feedback after watching a training video.
+- For side-on footage: focus coaching cues on bar path, bar speed, descent control, and sticking point. Do NOT write coaching cues about pause duration, lockout symmetry, or pressing evenness — these cannot be observed from this angle.
 
 Respond ONLY with valid JSON:
 {
