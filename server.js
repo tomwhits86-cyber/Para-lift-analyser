@@ -92,7 +92,7 @@ async function requireAuth(req, res, next) {
   
   try {
     const result = await pool.query(
-      'SELECT s.user_id, u.email, u.credits FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = $1 AND s.expires_at > NOW()',
+      'SELECT s.user_id AS id, u.email, u.credits FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.token = $1 AND s.expires_at > NOW()',
       [token]
     );
     if (result.rows.length === 0) return res.status(401).json({ error: 'Invalid or expired session' });
@@ -177,6 +177,7 @@ app.post('/api/auth/logout', requireAuth, async (req, res) => {
 app.get('/api/auth/me', requireAuth, async (req, res) => {
   res.json({ 
     user: { 
+      id: req.user.id,
       email: req.user.email, 
       credits: req.user.credits 
     } 
@@ -599,7 +600,7 @@ app.post('/api/analyze', requireAuth, upload.single('video'), async function(req
     console.log('Analysing for ' + athlete + ' (user: ' + req.user.email + ') - credits: ' + req.user.credits);
 
     // Deduct credit immediately to prevent double-use
-    await pool.query('UPDATE users SET credits = credits - 1 WHERE id = $1', [req.user.user_id]);
+    await pool.query('UPDATE users SET credits = credits - 1 WHERE id = $1', [req.user.id]);
 
     const duration = await getVideoDuration(req.file.path);
     const surveyCount = Math.min(12, Math.max(6, Math.floor(duration * 1.5)));
@@ -624,11 +625,11 @@ app.post('/api/analyze', requireAuth, upload.single('video'), async function(req
     // Log analysis
     await pool.query(
       'INSERT INTO analyses (user_id, athlete, load, angle, verdict, overall_score) VALUES ($1, $2, $3, $4, $5, $6)',
-      [req.user.user_id, athlete, load, angle, analysis.verdict, analysis.overall_score]
+      [req.user.id, athlete, load, angle, analysis.verdict, analysis.overall_score]
     );
 
     // Get updated credit balance
-    const creditResult = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.user_id]);
+    const creditResult = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
     const remainingCredits = creditResult.rows[0]?.credits || 0;
 
     res.json({
@@ -648,7 +649,7 @@ app.post('/api/analyze', requireAuth, upload.single('video'), async function(req
     console.error('Error:', err);
     // Refund credit on error
     try {
-      await pool.query('UPDATE users SET credits = credits + 1 WHERE id = $1', [req.user.user_id]);
+      await pool.query('UPDATE users SET credits = credits + 1 WHERE id = $1', [req.user.id]);
     } catch(refundErr) { console.error('Credit refund failed:', refundErr); }
     if (req.file) try { fs.unlinkSync(req.file.path); } catch(e) {}
     res.status(500).json({ error: err.message });
