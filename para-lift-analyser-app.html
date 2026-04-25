@@ -192,7 +192,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:12px;">
-    <div id="creditsDisplay" class="credits-badge"><span id="creditsCount">0</span> credits</div>
+    <div id="creditsDisplay" class="credits-badge" onclick="showBuyCredits()" style="cursor:pointer;" title="Buy credits"><span id="creditsCount">0</span> credits ＋</div>
     <button class="logout-btn" onclick="logout()">Sign out</button>
     <div class="conn-dot" id="connDot"></div>
   </div>
@@ -275,7 +275,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
   </div>
   <div class="vid-preview" id="vidPreview"><video id="videoEl" controls playsinline></video></div>
 </div>
-<div class="credits-section" id="creditsSection" style="display:none;">
+<div class="credits-section" id="creditsSection" style="display:block;">
   <div class="section-title">Top Up Credits</div>
   <div class="credits-grid">
     <div class="credit-pack" onclick="buyPack('starter')">
