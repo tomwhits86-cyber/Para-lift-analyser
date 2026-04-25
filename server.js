@@ -184,44 +184,89 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
 });
 
 // STRIPE WEBHOOK — add credits on payment
-app.post('/api/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
-  // For now accept all events — add Stripe signature verification when going live
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   let event;
-  try {
-    event = JSON.parse(req.body);
-  } catch(err) {
-    return res.status(400).json({ error: 'Invalid payload' });
+
+  // Verify webhook signature if secret is set
+  if (webhookSecret) {
+    const sig = req.headers['stripe-signature'];
+    try {
+      const crypto = require('crypto');
+      const payload = req.body;
+      const parts = sig.split(',').reduce((acc, part) => {
+        const [key, val] = part.split('=');
+        acc[key] = val;
+        return acc;
+      }, {});
+      const timestamp = parts['t'];
+      const expectedSig = parts['v1'];
+      const signedPayload = `${timestamp}.${payload}`;
+      const hmac = crypto.createHmac('sha256', webhookSecret).update(signedPayload).digest('hex');
+      if (hmac !== expectedSig) {
+        console.error('Webhook signature mismatch');
+        return res.status(400).json({ error: 'Invalid signature' });
+      }
+      event = JSON.parse(payload);
+    } catch(err) {
+      console.error('Webhook verification failed:', err.message);
+      return res.status(400).json({ error: 'Webhook error' });
+    }
+  } else {
+    try {
+      event = JSON.parse(req.body);
+    } catch(err) {
+      return res.status(400).json({ error: 'Invalid payload' });
+    }
   }
-  
+
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
+    const clientRefId = session.client_reference_id; // user's database ID
     const email = session.customer_email || session.customer_details?.email;
     const amount = session.amount_total; // in pence
-    
-    if (!email) {
-      console.log('Webhook: no email in session');
-      return res.json({ received: true });
-    }
-    
+
     // Determine credits based on amount paid
     let creditsToAdd = 0;
     if (amount === 1500) creditsToAdd = 10;       // £15 Starter
     else if (amount === 3500) creditsToAdd = 30;  // £35 Training Block
     else if (amount === 9900) creditsToAdd = 100; // £99 Squad
-    
-    if (creditsToAdd > 0) {
-      try {
-        await pool.query(
-          'UPDATE users SET credits = credits + $1 WHERE email = $2',
+
+    if (creditsToAdd === 0) {
+      console.log(`Webhook: unrecognised amount ${amount}, skipping`);
+      return res.json({ received: true });
+    }
+
+    // Match user — prefer client_reference_id (user DB id), fall back to email
+    try {
+      let result;
+      if (clientRefId) {
+        result = await pool.query(
+          'UPDATE users SET credits = credits + $1 WHERE id = $2 RETURNING email',
+          [creditsToAdd, clientRefId]
+        );
+      }
+      if (!result || result.rowCount === 0) {
+        // Fallback to email match
+        if (!email) {
+          console.log('Webhook: no user identifier found in session');
+          return res.json({ received: true });
+        }
+        result = await pool.query(
+          'UPDATE users SET credits = credits + $1 WHERE email = $2 RETURNING email',
           [creditsToAdd, email.toLowerCase()]
         );
-        console.log(`Added ${creditsToAdd} credits to ${email}`);
-      } catch(err) {
-        console.error('Failed to add credits:', err);
       }
+      if (result.rowCount > 0) {
+        console.log(`Webhook: added ${creditsToAdd} credits to ${result.rows[0].email}`);
+      } else {
+        console.log(`Webhook: no matching user found for id=${clientRefId} email=${email}`);
+      }
+    } catch(err) {
+      console.error('Webhook: failed to add credits:', err);
     }
   }
-  
+
   res.json({ received: true });
 });
 
@@ -328,7 +373,7 @@ async function detectLiftBoundaries(surveyFrames, duration) {
     content.push({ type: 'text', text: 'Frame ' + (i + 1) + ':' });
     content.push({ type: 'image', source: { type: 'base64', media_type: frame.mediaType, data: frame.base64 } });
   });
-  const response = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 500, temperature: 0, messages: [{ role: 'user', content }] });
+  const response = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content }] });
   const text = response.content[0].text;
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not detect lift boundaries');
@@ -516,9 +561,8 @@ Respond ONLY with valid JSON:
   });
 
   const response = await client.messages.create({
-   model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-4-6',
     max_tokens: 2500,
-    temperature: 0,
     system: systemPrompt,
     messages: [{ role: 'user', content }],
   });
