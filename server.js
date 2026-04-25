@@ -185,33 +185,18 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
 });
 
 // STRIPE WEBHOOK — add credits on payment
+const stripeClient = require('stripe')(process.env.STRIPE_SECRET_KEY);
 app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   let event;
 
-  // Verify webhook signature if secret is set
   if (webhookSecret) {
     const sig = req.headers['stripe-signature'];
     try {
-      const crypto = require('crypto');
-      const payload = req.body;
-      const parts = sig.split(',').reduce((acc, part) => {
-        const [key, val] = part.split('=');
-        acc[key] = val;
-        return acc;
-      }, {});
-      const timestamp = parts['t'];
-      const expectedSig = parts['v1'];
-      const signedPayload = `${timestamp}.${payload}`;
-      const hmac = crypto.createHmac('sha256', webhookSecret).update(signedPayload).digest('hex');
-      if (hmac !== expectedSig) {
-        console.error('Webhook signature mismatch');
-        return res.status(400).json({ error: 'Invalid signature' });
-      }
-      event = JSON.parse(payload);
+      event = stripeClient.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch(err) {
-      console.error('Webhook verification failed:', err.message);
-      return res.status(400).json({ error: 'Webhook error' });
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).json({ error: 'Webhook error: ' + err.message });
     }
   } else {
     try {
