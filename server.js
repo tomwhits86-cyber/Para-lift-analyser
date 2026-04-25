@@ -361,7 +361,7 @@ async function detectLiftBoundaries(surveyFrames, duration) {
     content.push({ type: 'text', text: 'Frame ' + (i + 1) + ':' });
     content.push({ type: 'image', source: { type: 'base64', media_type: frame.mediaType, data: frame.base64 } });
   });
-  const response = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content }] });
+  const response = await client.messages.create({ model: 'claude-sonnet-4-6', max_tokens: 500, temperature: 0, messages: [{ role: 'user', content }] });
   const text = response.content[0].text;
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Could not detect lift boundaries');
@@ -564,6 +564,7 @@ Respond ONLY with valid JSON:
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2500,
+    temperature: 0,
     system: systemPrompt,
     messages: [{ role: 'user', content }],
   });
