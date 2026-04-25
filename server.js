@@ -66,6 +66,79 @@ async function initDB() {
 
 initDB().catch(console.error);
 
+
+// STRIPE WEBHOOK — add credits on payment
+const stripeClient = require('stripe')(process.env.STRIPE_SECRET_KEY);
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  let event;
+
+  if (webhookSecret) {
+    const sig = req.headers['stripe-signature'];
+    try {
+      event = stripeClient.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch(err) {
+      console.error('Webhook signature verification failed:', err.message);
+      return res.status(400).json({ error: 'Webhook error: ' + err.message });
+    }
+  } else {
+    try {
+      event = JSON.parse(req.body);
+    } catch(err) {
+      return res.status(400).json({ error: 'Invalid payload' });
+    }
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const clientRefId = session.client_reference_id; // user's database ID
+    const email = session.customer_email || session.customer_details?.email;
+    const amount = session.amount_total; // in pence
+
+    // Determine credits based on amount paid
+    let creditsToAdd = 0;
+    if (amount === 1500) creditsToAdd = 10;       // £15 Starter
+    else if (amount === 3500) creditsToAdd = 30;  // £35 Training Block
+    else if (amount === 9900) creditsToAdd = 100; // £99 Squad
+
+    if (creditsToAdd === 0) {
+      console.log(`Webhook: unrecognised amount ${amount}, skipping`);
+      return res.json({ received: true });
+    }
+
+    // Match user — prefer client_reference_id (user DB id), fall back to email
+    try {
+      let result;
+      if (clientRefId) {
+        result = await pool.query(
+          'UPDATE users SET credits = credits + $1 WHERE id = $2 RETURNING email',
+          [creditsToAdd, clientRefId]
+        );
+      }
+      if (!result || result.rowCount === 0) {
+        // Fallback to email match
+        if (!email) {
+          console.log('Webhook: no user identifier found in session');
+          return res.json({ received: true });
+        }
+        result = await pool.query(
+          'UPDATE users SET credits = credits + $1 WHERE email = $2 RETURNING email',
+          [creditsToAdd, email.toLowerCase()]
+        );
+      }
+      if (result.rowCount > 0) {
+        console.log(`Webhook: added ${creditsToAdd} credits to ${result.rows[0].email}`);
+      } else {
+        console.log(`Webhook: no matching user found for id=${clientRefId} email=${email}`);
+      }
+    } catch(err) {
+      console.error('Webhook: failed to add credits:', err);
+    }
+  }
+
+  res.json({ received: true });
+});
+
 app.use(cors({ origin: '*', methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Content-Type', 'Authorization'] }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(__dirname));
@@ -184,77 +257,6 @@ app.get('/api/auth/me', requireAuth, async (req, res) => {
   });
 });
 
-// STRIPE WEBHOOK — add credits on payment
-const stripeClient = require('stripe')(process.env.STRIPE_SECRET_KEY);
-app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  let event;
-
-  if (webhookSecret) {
-    const sig = req.headers['stripe-signature'];
-    try {
-      event = stripeClient.webhooks.constructEvent(req.body, sig, webhookSecret);
-    } catch(err) {
-      console.error('Webhook signature verification failed:', err.message);
-      return res.status(400).json({ error: 'Webhook error: ' + err.message });
-    }
-  } else {
-    try {
-      event = JSON.parse(req.body);
-    } catch(err) {
-      return res.status(400).json({ error: 'Invalid payload' });
-    }
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const clientRefId = session.client_reference_id; // user's database ID
-    const email = session.customer_email || session.customer_details?.email;
-    const amount = session.amount_total; // in pence
-
-    // Determine credits based on amount paid
-    let creditsToAdd = 0;
-    if (amount === 1500) creditsToAdd = 10;       // £15 Starter
-    else if (amount === 3500) creditsToAdd = 30;  // £35 Training Block
-    else if (amount === 9900) creditsToAdd = 100; // £99 Squad
-
-    if (creditsToAdd === 0) {
-      console.log(`Webhook: unrecognised amount ${amount}, skipping`);
-      return res.json({ received: true });
-    }
-
-    // Match user — prefer client_reference_id (user DB id), fall back to email
-    try {
-      let result;
-      if (clientRefId) {
-        result = await pool.query(
-          'UPDATE users SET credits = credits + $1 WHERE id = $2 RETURNING email',
-          [creditsToAdd, clientRefId]
-        );
-      }
-      if (!result || result.rowCount === 0) {
-        // Fallback to email match
-        if (!email) {
-          console.log('Webhook: no user identifier found in session');
-          return res.json({ received: true });
-        }
-        result = await pool.query(
-          'UPDATE users SET credits = credits + $1 WHERE email = $2 RETURNING email',
-          [creditsToAdd, email.toLowerCase()]
-        );
-      }
-      if (result.rowCount > 0) {
-        console.log(`Webhook: added ${creditsToAdd} credits to ${result.rows[0].email}`);
-      } else {
-        console.log(`Webhook: no matching user found for id=${clientRefId} email=${email}`);
-      }
-    } catch(err) {
-      console.error('Webhook: failed to add credits:', err);
-    }
-  }
-
-  res.json({ received: true });
-});
 
 // MANUAL CREDIT ADD (admin use — protected by secret)
 app.post('/api/admin/credits', async (req, res) => {
