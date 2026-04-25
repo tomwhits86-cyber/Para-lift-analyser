@@ -557,11 +557,12 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   const wcStr = wc ? " | "+wc+" class" : "";
   const bwStr = bw ? " | BW: "+bw : "";
   document.getElementById("rMeta").textContent=sessionType+" - "+load+wcStr+bwStr+" - "+new Date().toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})+" - "+(meta&&meta.framesAnalyzed?meta.framesAnalyzed:10)+" frames";
+  const isSideOn = angle === 'Side-on';
   const scores=[
     {label:"Overall",val:d.overall_score,sub:"Lift quality"},
     {label:"Setup",val:d.setup_score,sub:"Start position"},
-    {label:"Pause",val:d.pause_score,sub:"Chest hold"},
-    {label:"Press",val:d.press_score,sub:"Execution"},
+    {label:isSideOn?"Descent":"Pause",val:d.pause_score,sub:isSideOn?"Descent control":"Chest hold"},
+    {label:isSideOn?"Bar Path":"Press",val:d.press_score,sub:isSideOn?"Path quality":"Execution"},
   ];
   document.getElementById("scoreRow").innerHTML=scores.map(s=>{
     const c=s.val>=80?"green":s.val>=60?"amber":"red";
@@ -631,7 +632,8 @@ function exportPDF() {
       const metaStr=sessionType+' - '+load+(wcVal?' | '+wcVal+' class':'')+(bwVal?' | BW: '+bwVal:'')+' - '+new Date().toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
       doc.text(metaStr,margin,y);y+=8;
       doc.setDrawColor(...gold);doc.setLineWidth(0.4);doc.line(margin,y,pageW-margin,y);y+=8;
-      const scores=[['OVERALL',d.overall_score||0],['SETUP',d.setup_score||0],['PAUSE',d.pause_score||0],['PRESS',d.press_score||0]];
+      const isSideOnPDF = angle === 'Side-on';
+      const scores=[['OVERALL',d.overall_score||0],['SETUP',d.setup_score||0],[isSideOnPDF?'DESCENT':'PAUSE',d.pause_score||0],[isSideOnPDF?'BAR PATH':'PRESS',d.press_score||0]];
       const boxW=contentW/4-2;
       scores.forEach(function(s,i){
         const x=margin+i*(boxW+2.5),val=s[1],col=val>=80?green:val>=60?amber:red;
