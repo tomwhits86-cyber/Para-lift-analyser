@@ -290,14 +290,14 @@ function extractSurveyFrames(videoPath, count) {
     const tmpDir = os.tmpdir();
     const frames = [];
     ffmpeg(videoPath)
-      .screenshots({ count, folder: tmpDir, filename: 'survey-%i.png', size: '320x?' })
+      .screenshots({ count, folder: tmpDir, filename: 'survey-%i.jpg', size: '320x?' })
       .on('end', () => {
         try {
           for (let i = 1; i <= count; i++) {
-            const filePath = path.join(tmpDir, 'survey-' + i + '.png');
+            const filePath = path.join(tmpDir, 'survey-' + i + '.jpg');
             if (fs.existsSync(filePath)) {
               const buf = fs.readFileSync(filePath);
-              frames.push({ base64: buf.toString('base64'), mediaType: 'image/png' });
+              frames.push({ base64: buf.toString('base64'), mediaType: 'image/jpeg' });
               fs.unlinkSync(filePath);
             }
           }
@@ -321,28 +321,28 @@ async function extractFramesInWindow(videoPath, windowStart, windowEnd, frameCou
   const frames = [];
   for (let i = 0; i < timestamps.length; i++) {
     const ts = timestamps[i];
-    const filename = 'rlframe-' + i + '-' + Date.now() + '.png';
+    const filename = 'rlframe-' + i + '-' + Date.now() + '.jpg';
     const filePath = path.join(tmpDir, filename);
     try {
       await new Promise(function(resolve, reject) {
-        ffmpeg(videoPath).seekInput(ts).frames(1).output(filePath).size('640x?').on('end', resolve).on('error', reject).run();
+        ffmpeg(videoPath).seekInput(ts).frames(1).output(filePath).size('480x?').outputOptions(['-q:v', '4']).on('end', resolve).on('error', reject).run();
       });
       if (fs.existsSync(filePath)) {
         const buf = fs.readFileSync(filePath);
-        frames.push({ base64: buf.toString('base64'), mediaType: 'image/png', timestamp: ts, index: i });
+        frames.push({ base64: buf.toString('base64'), mediaType: 'image/jpeg', timestamp: ts, index: i });
         fs.unlinkSync(filePath);
       }
     } catch(err) {
       const adjustedTs = Math.max(0, ts - 0.1);
       try {
-        const fn2 = 'rlframe-retry-' + i + '-' + Date.now() + '.png';
+        const fn2 = 'rlframe-retry-' + i + '-' + Date.now() + '.jpg';
         const fp2 = path.join(tmpDir, fn2);
         await new Promise(function(resolve, reject) {
-          ffmpeg(videoPath).seekInput(adjustedTs).frames(1).output(fp2).size('640x?').on('end', resolve).on('error', reject).run();
+          ffmpeg(videoPath).seekInput(adjustedTs).frames(1).output(fp2).size('480x?').outputOptions(['-q:v', '4']).on('end', resolve).on('error', reject).run();
         });
         if (fs.existsSync(fp2)) {
           const buf = fs.readFileSync(fp2);
-          frames.push({ base64: buf.toString('base64'), mediaType: 'image/png', timestamp: adjustedTs, index: i });
+          frames.push({ base64: buf.toString('base64'), mediaType: 'image/jpeg', timestamp: adjustedTs, index: i });
           fs.unlinkSync(fp2);
         }
       } catch(err2) { console.log('Frame ' + i + ' failed on retry'); }
