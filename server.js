@@ -525,7 +525,7 @@ LANGUAGE STYLE:
 - Use natural coaching language: "In the video...", "During the descent...", "At chest contact...", "Through the concentric phase..."
 - NEVER mention any person other than the athlete.
 - Write as an expert coach giving feedback after watching a training video.
-- For side-on footage: focus coaching cues on bar path, bar speed, descent control, and sticking point. Do NOT write coaching cues about pause duration, lockout symmetry, or pressing evenness — these cannot be observed from this angle.
+- For side-on footage: focus coaching cues EXCLUSIVELY on bar path, bar speed, descent control, and sticking point. Do NOT reference pause duration, pause quality, pause stillness, lockout symmetry, elbow position, or pressing evenness in coaching cues — these cannot be observed from this angle. If a cue is about descent, frame it as descent control or bar path to chest, not pause.
 
 Respond ONLY with valid JSON:
 {
