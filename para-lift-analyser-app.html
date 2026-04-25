@@ -154,6 +154,23 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .credits-badge{font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;color:var(--gold);display:none;white-space:nowrap;}
 .logout-btn{background:none;border:none;color:var(--grey);font-size:11px;font-family:"Barlow",sans-serif;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color 0.2s;}
 .logout-btn:hover{color:var(--white);}
+.buy-credits-bar{display:none;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.25);border-radius:10px;margin-bottom:20px;gap:12px;}
+.buy-credits-bar.visible{display:flex;}
+.buy-credits-bar-text{font-size:13px;color:var(--grey-light);flex:1;}
+.buy-credits-bar-text strong{color:var(--gold);}
+.buy-btn-small{font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:8px 14px;cursor:pointer;white-space:nowrap;transition:background 0.2s;}
+.buy-btn-small:hover{background:var(--gold-bright);}
+.credits-section{margin-bottom:24px;}
+.credits-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.credit-pack{background:var(--card);border:1px solid var(--card-border);border-radius:var(--radius);padding:16px 12px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;}
+.credit-pack:hover{border-color:var(--gold);background:rgba(201,168,76,0.06);}
+.credit-pack.featured{border-color:var(--gold);background:rgba(201,168,76,0.07);}
+.credit-pack-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:var(--gold);color:var(--navy);padding:2px 8px;border-radius:4px;white-space:nowrap;}
+.credit-pack-name{font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+.credit-pack-price{font-family:"Barlow Condensed",sans-serif;font-size:30px;font-weight:900;color:var(--white);line-height:1;margin-bottom:2px;}
+.credit-pack-credits{font-size:12px;color:var(--grey);margin-bottom:10px;}
+.credit-pack-btn{width:100%;padding:8px;background:var(--gold);border:none;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;color:var(--navy);cursor:pointer;transition:background 0.2s;}
+.credit-pack-btn:hover{background:var(--gold-bright);}
 @media print {
   body{background:#0a1628 !important;color:#f4f6fa !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   .app{max-width:100%;padding:0 20px;}
@@ -184,6 +201,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 <div class="mode-bar">
   <div class="mode-dot checking" id="modeDot"></div>
   <div class="mode-text" id="modeText">Connecting to analysis server...</div>
+</div>
+<div class="buy-credits-bar" id="buyCreditsBar">
+  <div class="buy-credits-bar-text"><strong id="buyBarCredits">0</strong> credits remaining — top up to keep analysing</div>
+  <button class="buy-btn-small" onclick="showBuyCredits()">Buy Credits</button>
 </div>
 <div class="section-title-large">Lift Set Up</div>
 <div class="ctx-grid">
@@ -254,6 +275,30 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
   </div>
   <div class="vid-preview" id="vidPreview"><video id="videoEl" controls playsinline></video></div>
 </div>
+<div class="credits-section" id="creditsSection" style="display:none;">
+  <div class="section-title">Top Up Credits</div>
+  <div class="credits-grid">
+    <div class="credit-pack" onclick="buyPack('starter')">
+      <div class="credit-pack-name">Starter</div>
+      <div class="credit-pack-price">£15</div>
+      <div class="credit-pack-credits">10 analyses</div>
+      <button class="credit-pack-btn">Buy Now</button>
+    </div>
+    <div class="credit-pack featured" onclick="buyPack('training')">
+      <div class="credit-pack-badge">Most Popular</div>
+      <div class="credit-pack-name">Training Block</div>
+      <div class="credit-pack-price">£35</div>
+      <div class="credit-pack-credits">30 analyses</div>
+      <button class="credit-pack-btn">Buy Now</button>
+    </div>
+    <div class="credit-pack" onclick="buyPack('squad')">
+      <div class="credit-pack-name">Squad</div>
+      <div class="credit-pack-price">£99</div>
+      <div class="credit-pack-credits">100 analyses</div>
+      <button class="credit-pack-btn">Buy Now</button>
+    </div>
+  </div>
+</div>
 <div class="section-title">Coach Notes</div>
 <div class="notes-card">
   <textarea id="notes" placeholder="Add context - classification, injury history, load context, specific areas to check..." rows="3"></textarea>
@@ -319,13 +364,47 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 <script>
 const BACKEND = "https://para-lift-analyser-production.up.railway.app";
 
+
+// ── BUY CREDITS ──────────────────────────────────────────────────────────
+const STRIPE_LINKS = {
+  starter:  'https://buy.stripe.com/test_5kQ3co5nYet9foa8sh6Zy00',
+  training: 'https://buy.stripe.com/test_28EeEY5nY3Ov1xkeQF6Zy01',
+  squad:    'https://buy.stripe.com/test_00w00c2bMacT8ZM6k96Zy02'
+};
+function showBuyCredits() {
+  const sec = document.getElementById('creditsSection');
+  if(sec) { sec.style.display = sec.style.display === 'none' ? 'block' : 'none'; }
+}
+function buyPack(pack) {
+  const userId = localStorage.getItem('reflight_user_id') || '';
+  const email = localStorage.getItem('reflight_email') || '';
+  let url = STRIPE_LINKS[pack];
+  const params = [];
+  if(userId) params.push('client_reference_id=' + encodeURIComponent(userId));
+  if(email) params.push('prefilled_email=' + encodeURIComponent(email));
+  if(params.length) url += '?' + params.join('&');
+  window.open(url, '_blank');
+}
+// ─────────────────────────────────────────────────────────────────────────
 // ── AUTH ──────────────────────────────────────────────────────────────────
 (function(){
   const token = localStorage.getItem('reflight_token');
   if(!token){ window.location.href = '/login.html'; return; }
   fetch(BACKEND+'/api/auth/me', {headers:{'Authorization':'Bearer '+token}})
     .then(r => { if(r.status===401){ logout(); } return r.json(); })
-    .then(d => { if(d.user){ updateCredits(d.user.credits); } })
+    .then(d => { 
+    if(d.user){ 
+      updateCredits(d.user.credits);
+      localStorage.setItem('reflight_user_id', d.user.id);
+      localStorage.setItem('reflight_email', d.user.email);
+      if(d.user.credits <= 3){ 
+        const bar = document.getElementById('buyCreditsBar');
+        const cnt = document.getElementById('buyBarCredits');
+        if(bar){ bar.classList.add('visible'); }
+        if(cnt){ cnt.textContent = d.user.credits; }
+      }
+    } 
+  })
     .catch(()=>{});
 })();
 
@@ -442,6 +521,12 @@ async function runAnalysis() {
     renderResults(data.data,data.metadata,athlete,sessionType,load,angle,plateCalibrated);
     if(data.metadata && data.metadata.remainingCredits !== undefined){
       updateCredits(data.metadata.remainingCredits);
+      const bar = document.getElementById('buyCreditsBar');
+      const cnt = document.getElementById('buyBarCredits');
+      if(data.metadata.remainingCredits <= 3 && bar){
+        bar.classList.add('visible');
+        if(cnt) cnt.textContent = data.metadata.remainingCredits;
+      }
     }
   } catch(err) {
     showErr("Analysis failed: "+err.message);
