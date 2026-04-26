@@ -316,7 +316,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
     <div class="lstep" id="s1">&#127916; Uploading video to server</div>
     <div class="lstep" id="s2">&#128208; Extracting frames from the lift</div>
     <div class="lstep" id="s3">&#9889; <span id="s3text">Calculating concentric velocity</span></div>
-    <div class="lstep" id="s4">&#127937; <span id="s4text">Assessing World Para Powerlifting rules</span></div>
+    <div class="lstep" id="s4">&#127937; <span id="s4text">Assessing lift mechanics</span></div>
   </div>
 </div>
 <div class="results" id="results">
@@ -546,7 +546,7 @@ function animSteps() {
   const subtitleEl = document.getElementById("loadingSubtitle");
   if(s3el) s3el.textContent = isSideOnAnim ? "Calculating bar velocity" : "Calculating concentric velocity";
   if(s4el) s4el.textContent = isSideOnAnim ? "Analysing bar path and descent mechanics" : "Assessing World Para Powerlifting rules";
-  if(subtitleEl) subtitleEl.textContent = isSideOnAnim ? "Extracting frames and analysing bar path" : "Extracting frames and assessing against WPP rules";
+  if(subtitleEl) subtitleEl.textContent = isSideOnAnim ? "Extracting frames and analysing bar path" : "Extracting frames and running analysis";
   const steps=["s1","s2","s3","s4"];
   let i=0;
   steps.forEach(s=>document.getElementById(s).className="lstep");
