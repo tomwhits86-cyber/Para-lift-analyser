@@ -89,6 +89,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .score-val{font-family:"Barlow Condensed",sans-serif;font-size:32px;font-weight:900;line-height:1;margin-bottom:2px;}
 .score-val.green{color:var(--green);}.score-val.amber{color:var(--amber);}.score-val.red{color:var(--red);}
 .score-sub{font-size:9px;color:var(--grey);}
+.score-ai-note{font-size:8px;color:var(--gold-dim);letter-spacing:0.5px;margin-top:2px;}
 .vel-card{background:var(--navy-mid);border:1px solid var(--gold-dim);border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:14px;}
 .vel-icon{font-size:28px;flex-shrink:0;}
 .vel-label{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:2px;}
@@ -114,6 +115,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .rule-badge.pass{background:rgba(46,204,122,0.15);color:var(--green);border:1px solid rgba(46,204,122,0.3);}
 .rule-badge.warning{background:rgba(240,168,48,0.15);color:var(--amber);border:1px solid rgba(240,168,48,0.3);}
 .rule-badge.fail{background:rgba(232,64,64,0.15);color:var(--red);border:1px solid rgba(232,64,64,0.3);}
+.rule-dropdown{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 6px;border-radius:4px;border:none;cursor:pointer;-webkit-appearance:none;text-align:center;}
+.rule-dropdown.pass{background:rgba(46,204,122,0.15);color:var(--green);border:1px solid rgba(46,204,122,0.3);}
+.rule-dropdown.warning{background:rgba(240,168,48,0.15);color:var(--amber);border:1px solid rgba(240,168,48,0.3);}
+.rule-dropdown.fail{background:rgba(232,64,64,0.15);color:var(--red);border:1px solid rgba(232,64,64,0.3);}
 .rule-content{flex:1;}
 .rule-name{font-size:12px;font-weight:600;color:var(--white);margin-bottom:3px;}
 .rule-detail{font-size:12px;color:var(--grey-light);line-height:1.4;}
@@ -574,7 +579,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   ];
   document.getElementById("scoreRow").innerHTML=scores.map(s=>{
     const c=s.val>=80?"green":s.val>=60?"amber":"red";
-    return "<div class='score-card'><div class='score-lbl'>"+s.label+"</div><div class='score-val "+c+"'>"+(s.val||"-")+"</div><div class='score-sub'>"+s.sub+"</div></div>";
+    return "<div class='score-card'><div class='score-lbl'>"+s.label+"</div><div class='score-val "+c+"'>"+(s.val||"-")+"</div><div class='score-sub'>"+s.sub+"</div><div class='score-ai-note'>AI</div>
   }).join("");
   const velCard = document.getElementById("velCard");
   const showVelocity = angle === 'Side-on' && plateCalibrated && d.bar_speed_estimate !== null && d.bar_speed_estimate !== undefined;
@@ -609,7 +614,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   document.getElementById("rulesList").innerHTML=filteredRules.map(r=>{
     const sc=(r.status||"").toLowerCase();
     const bc=sc==="pass"?"pass":sc==="fail"?"fail":"warning";
-    return "<div class='rule-row'><div class='rule-status'><span class='rule-badge "+bc+"'>"+(r.status||"?")+"</span></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail editable' contenteditable='true'>"+r.detail+"</div></div></div>";
+    return "<div class='rule-row'><div class='rule-status'><select class='rule-dropdown "+bc+"' onchange='updateRuleBadge(this)' data-rule='"+r.rule+"'><option value='Pass' "+(r.status==='Pass'?'selected':'')+">Pass</option><option value='Warning' "+(r.status==='Warning'?'selected':'')+">Warning</option><option value='Fail' "+(r.status==='Fail'?'selected':'')+">Fail</option></select></div>
   }).join("");
   const strengths=d.strengths||[];
   document.getElementById("strengthsList").innerHTML=strengths.map(s=>"<div class='strength-item'><div class='strength-dot'></div><span class='editable' contenteditable='true'>"+s+"</span></div>").join("");
@@ -751,6 +756,10 @@ function newAnalysis() {
   document.getElementById("notes").value="";
   document.getElementById("plateCalibrated").checked=false;
   window.scrollTo({top:0,behavior:"smooth"});
+}
+function updateRuleBadge(select) {
+  const val = select.value.toLowerCase();
+  select.className = 'rule-dropdown ' + val;
 }
 function showErr(m){const e=document.getElementById("errorBox");e.textContent=m;e.classList.add("visible");}
 function hideErr(){document.getElementById("errorBox").classList.remove("visible");}
