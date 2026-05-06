@@ -579,7 +579,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   ];
   document.getElementById("scoreRow").innerHTML=scores.map(s=>{
     const c=s.val>=80?"green":s.val>=60?"amber":"red";
-    return "<div class='score-card'><div class='score-lbl'>"+s.label+"</div><div class='score-val "+c+"'>"+(s.val||"-")+"</div><div class='score-sub'>"+s.sub+"</div><div class='score-ai-note'>AI</div>
+    return "<div class='score-card'><div class='score-lbl'>"+s.label+"</div><div class='score-val "+c+"'>"+(s.val||"-")+"</div><div class='score-sub'>"+s.sub+"</div><div class='score-ai-note'>AI</div></div>";
   }).join("");
   const velCard = document.getElementById("velCard");
   const showVelocity = angle === 'Side-on' && plateCalibrated && d.bar_speed_estimate !== null && d.bar_speed_estimate !== undefined;
