@@ -614,8 +614,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   document.getElementById("rulesList").innerHTML=filteredRules.map(r=>{
     const sc=(r.status||"").toLowerCase();
     const bc=sc==="pass"?"pass":sc==="fail"?"fail":"warning";
-    return "<div class='rule-row'><div class='rule-status'><select class='rule-dropdown "+bc+"' onchange='updateRuleBadge(this)' data-rule='"+r.rule+"'><option value='Pass' "+(r.status==='Pass'?'selected':'')+">Pass</option><option value='Warning' "+(r.status==='Warning'?'selected':'')+">Warning</option><option value='Fail' "+(r.status==='Fail'?'selected':'')+">Fail</option></select></div>
-  }).join("");
+    return "<div class='rule-row'><div class='rule-status'><select class='rule-dropdown "+bc+"' onchange=\"updateRuleBadge(this)\" data-rule=\""+r.rule+"\"><option value='Pass' "+(r.status==='Pass'?'selected':'')+">Pass</option><option value='Warning' "+(r.status==='Warning'?'selected':'')+">Warning</option><option value='Fail' "+(r.status==='Fail'?'selected':'')+">Fail</option></select></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail'>"+r.detail+"</div></div></div>";
   const strengths=d.strengths||[];
   document.getElementById("strengthsList").innerHTML=strengths.map(s=>"<div class='strength-item'><div class='strength-dot'></div><span class='editable' contenteditable='true'>"+s+"</span></div>").join("");
   const corrections=d.technical_corrections||[];
