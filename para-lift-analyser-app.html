@@ -116,6 +116,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .rule-badge.warning{background:rgba(240,168,48,0.15);color:var(--amber);border:1px solid rgba(240,168,48,0.3);}
 .rule-badge.fail{background:rgba(232,64,64,0.15);color:var(--red);border:1px solid rgba(232,64,64,0.3);}
 .rule-content{flex:1;}
+.rule-dropdown{padding:6px 8px;border:1px solid var(--gold-dim);border-radius:4px;background:var(--card);color:var(--white);font-size:9px;font-weight:600;cursor:pointer;}
 .rule-name{font-size:12px;font-weight:600;color:var(--white);margin-bottom:3px;}
 .rule-detail{font-size:12px;color:var(--grey-light);line-height:1.4;}
 .strengths-card{background:rgba(46,204,122,0.05);border:1px solid rgba(46,204,122,0.15);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
@@ -620,8 +621,9 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   document.getElementById("cuesList").innerHTML=cues.map((c,i)=>"<div class='cue'><div class='cue-num'>"+(i+1)+"</div><div class='cue-text editable' contenteditable='true'>"+c+"</div></div>").join("");
   document.getElementById("results").classList.add("visible");
   document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"});
-}
-function exportPDF() {
+  }
+  function updateRuleBadge(select){const newStatus=select.value;const ruleRow=select.closest('.rule-row');const badge=ruleRow.querySelector('.rule-dropdown');badge.className='rule-dropdown '+(newStatus==='Pass'?'pass':newStatus==='Warning'?'warning':'fail');}
+  function exportPDF() {
   if (!lastAnalysis) { showErr("No analysis to export. Please run an analysis first."); return; }
   const btn = document.querySelector('.act-btn.primary');
   if (btn) { btn.textContent = "Generating PDF..."; btn.disabled = true; }
