@@ -622,8 +622,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   document.getElementById("results").classList.add("visible");
   document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"});
   }
-  function updateRuleBadge(select){const newStatus=select.value;const ruleRow=select.closest('.rule-row');const badge=ruleRow.querySelector('.rule-dropdown');badge.className='rule-dropdown '+(newStatus==='Pass'?'pass':newStatus==='Warning'?'warning':'fail');}
-  function exportPDF() {
+  function updateRuleBadge(select){const newStatus=select.value;let bgColor='rgba(46,204,122,0.15)';if(newStatus==='Warning')bgColor='rgba(240,168,48,0.15)';else if(newStatus==='Fail')bgColor='rgba(232,64,64,0.15)';select.style.backgroundColor=bgColor;}  function exportPDF() {
   if (!lastAnalysis) { showErr("No analysis to export. Please run an analysis first."); return; }
   const btn = document.querySelector('.act-btn.primary');
   if (btn) { btn.textContent = "Generating PDF..."; btn.disabled = true; }
