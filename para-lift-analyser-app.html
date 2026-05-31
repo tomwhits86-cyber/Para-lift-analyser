@@ -117,6 +117,11 @@ header{display:flex;align-items:center;justify-content:space-between;padding:20p
 .rule-badge.fail{background:rgba(232,64,64,0.15);color:var(--red);border:1px solid rgba(232,64,64,0.3);}
 .rule-content{flex:1;}
 .rule-dropdown{padding:6px 8px;border:1px solid var(--gold-dim);border-radius:4px;background:var(--card);color:var(--white);font-size:9px;font-weight:600;cursor:pointer;}
+.rule-dropdown.pass{background:rgba(46,204,122,0.15);color:var(--green);border:1px solid rgba(46,204,122,0.3);}
+.rule-dropdown.warning{background:rgba(240,168,48,0.15);color:var(--amber);border:1px solid rgba(240,168,48,0.3);}
+.rule-dropdown.fail{background:rgba(232,64,64,0.15);color:var(--red);border:1px solid rgba(232,64,64,0.3);}
+.rule-ce{font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold);margin-top:3px;text-align:center;display:none;}
+.rule-ce.visible{display:block;}
 .rule-name{font-size:12px;font-weight:600;color:var(--white);margin-bottom:3px;}
 .rule-detail{font-size:12px;color:var(--grey-light);line-height:1.4;}
 .strengths-card{background:rgba(46,204,122,0.05);border:1px solid rgba(46,204,122,0.15);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;}
@@ -611,7 +616,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   document.getElementById("rulesList").innerHTML=filteredRules.map(r=>{
     const sc=(r.status||"").toLowerCase();
     const bc=sc==="pass"?"pass":sc==="fail"?"fail":"warning";
-    return "<div class='rule-row'><div class='rule-status'><select class='rule-dropdown "+bc+"' onchange=\"updateRuleBadge(this)\" data-rule=\""+r.rule+"\"><option value='Pass' "+(r.status==='Pass'?'selected':'')+">Pass</option><option value='Warning' "+(r.status==='Warning'?'selected':'')+">Warning</option><option value='Fail' "+(r.status==='Fail'?'selected':'')+">Fail</option></select></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail editable' contenteditable='true'>"+r.detail+"</div></div></div>";
+    return "<div class='rule-row'><div class='rule-status' style='flex-direction:column;align-items:center;'><select class='rule-dropdown "+bc+"' onchange=\"updateRuleBadge(this)\" data-rule=\""+r.rule+"\"><option value='Pass' "+(r.status==='Pass'?'selected':'')+">Pass</option><option value='Warning' "+(r.status==='Warning'?'selected':'')+">Warning</option><option value='Fail' "+(r.status==='Fail'?'selected':'')+">Fail</option></select><div class='rule-ce'>CE</div></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail editable' contenteditable='true'>"+r.detail+"</div></div></div>";
   }).join("");
   const strengths=d.strengths||[];
   document.getElementById("strengthsList").innerHTML=strengths.map(s=>"<div class='strength-item'><div class='strength-dot'></div><span class='editable' contenteditable='true'>"+s+"</span></div>").join("");
@@ -622,7 +627,15 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   document.getElementById("results").classList.add("visible");
   document.getElementById("results").scrollIntoView({behavior:"smooth",block:"start"});
   }
-  function updateRuleBadge(select){const newStatus=select.value;let bgColor='rgba(46,204,122,0.15)';if(newStatus==='Warning')bgColor='rgba(240,168,48,0.15)';else if(newStatus==='Fail')bgColor='rgba(232,64,64,0.15)';select.style.backgroundColor=bgColor;}  function exportPDF() {
+  function updateRuleBadge(select){
+  const newStatus = select.value;
+  select.className = 'rule-dropdown';
+  if(newStatus === 'Pass') select.classList.add('pass');
+  else if(newStatus === 'Warning') select.classList.add('warning');
+  else if(newStatus === 'Fail') select.classList.add('fail');
+  const ce = select.parentElement.querySelector('.rule-ce');
+  if(ce) ce.classList.add('visible');
+}  function exportPDF() {
   if (!lastAnalysis) { showErr("No analysis to export. Please run an analysis first."); return; }
   const btn = document.querySelector('.act-btn.primary');
   if (btn) { btn.textContent = "Generating PDF..."; btn.disabled = true; }
