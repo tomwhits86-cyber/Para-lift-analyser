@@ -736,9 +736,24 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
         doc.setTextColor(...white);doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text((r.rule||'').substring(0,50),margin+36,y+6);
         doc.setTextColor(...grey);doc.setFont('helvetica','normal');
         const detail=doc.splitTextToSize(editedDetail,contentW-40);
-        const detailLines=detail.slice(0,3);
+        const detailLines=detail.slice(0,4);
+        const boxH=14+(detailLines.length-1)*5;
+        doc.setFillColor(20,35,60);doc.roundedRect(margin,y,contentW,boxH,1,1,'F');
+        if(isCoachEdited){
+          doc.setFillColor(...col);doc.roundedRect(margin+2,y+3.5,22,6,1,1,'F');
+          doc.setTextColor(...navy);doc.setFontSize(6);doc.setFont('helvetica','bold');
+          doc.text(currentStatus.toUpperCase(),margin+8,y+7.5,{align:'center'});
+          doc.setFillColor(...gold);doc.roundedRect(margin+25,y+3.5,8,6,1,1,'F');
+          doc.setTextColor(...navy);doc.text('CE',margin+29,y+7.5,{align:'center'});
+        } else {
+          doc.setFillColor(...col);doc.roundedRect(margin+2,y+3.5,16,6,1,1,'F');
+          doc.setTextColor(...navy);doc.setFontSize(6);doc.setFont('helvetica','bold');
+          doc.text(currentStatus.toUpperCase(),margin+10,y+7.5,{align:'center'});
+        }
+        doc.setTextColor(...white);doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text((r.rule||'').substring(0,50),margin+36,y+6);
+        doc.setTextColor(...grey);doc.setFont('helvetica','normal');
         doc.text(detailLines,margin+36,y+11);
-        y+=10+(detailLines.length-1)*4+5;
+        y+=boxH+2;
       });
       y+=4;checkPage(20);
       doc.setTextColor(...green);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text('TECHNICAL STRENGTHS',margin,y);y+=6;
