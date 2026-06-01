@@ -707,7 +707,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
       const editedHeadline=hEl?hEl.innerText:(d.verdict_headline||d.verdict||'');
       const editedSummary=pEl?pEl.innerText:(d.summary||'');
       const summaryLines=doc.splitTextToSize(editedSummary,contentW-8);
-      const summaryBoxH=16+(summaryLines.length*5);
+      const summaryBoxH=14+(summaryLines.length*4.5);
       doc.setFillColor(20,35,60);doc.roundedRect(margin,y,contentW,summaryBoxH,2,2,'F');
       doc.setTextColor(...vcol);doc.setFontSize(11);doc.setFont('helvetica','bold');doc.text(editedHeadline.substring(0,60),margin+4,y+8);
       doc.setTextColor(...white);doc.setFontSize(8);doc.setFont('helvetica','normal');
@@ -764,7 +764,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
       strengthsData.forEach(function(s){
         checkPage(10);doc.setTextColor(...green);doc.setFontSize(9);doc.text('+',margin,y);
         doc.setTextColor(...white);doc.setFontSize(8);doc.setFont('helvetica','normal');
-        const lines=doc.splitTextToSize(s,contentW-8);doc.text(lines,margin+6,y);y+=(lines.length*5)+4;
+        const lines=doc.splitTextToSize(s,contentW-8);doc.text(lines,margin+6,y);y+=(lines.length*4.5)+4;
       });
       y+=4;checkPage(20);
       doc.setTextColor(...amber);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text('TECHNICAL CORRECTIONS',margin,y);y+=6;
@@ -773,7 +773,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
       correctionsData.forEach(function(c){
         checkPage(10);doc.setTextColor(...amber);doc.setFontSize(9);doc.text('!',margin,y);
         doc.setTextColor(...white);doc.setFontSize(8);doc.setFont('helvetica','normal');
-        const lines=doc.splitTextToSize(c,contentW-8);doc.text(lines,margin+6,y);y+=(lines.length*5)+4;
+        const lines=doc.splitTextToSize(c,contentW-8);doc.text(lines,margin+6,y);y+=(lines.length*4.5)+4;
       });
       y+=4;checkPage(20);
       doc.setTextColor(...gold);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text('COACHING CUES',margin,y);y+=6;
@@ -781,7 +781,7 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
       const cuesData=cueEls.length>0?Array.from(cueEls).map(function(el){return el.innerText;}):(d.coaching_cues||[]);
       cuesData.forEach(function(c,i){
         const cLines=doc.splitTextToSize(c,contentW-16);
-        const cueBoxH=12+(cLines.length>1?(cLines.length-1)*5:0);
+        const cueBoxH=10+(cLines.length*4.5);
         checkPage(cueBoxH+4);doc.setFillColor(18,32,64);doc.roundedRect(margin,y,contentW,cueBoxH,1,1,'F');
         doc.setTextColor(...gold);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text(String(i+1),margin+4,y+8);
         doc.setTextColor(...white);doc.setFontSize(8);doc.setFont('helvetica','normal');
