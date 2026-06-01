@@ -735,7 +735,10 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
         }
         doc.setTextColor(...white);doc.setFontSize(7);doc.setFont('helvetica','bold');doc.text((r.rule||'').substring(0,50),margin+36,y+6);
         doc.setTextColor(...grey);doc.setFont('helvetica','normal');
-        const detail=doc.splitTextToSize(editedDetail,contentW-40);doc.text(detail[0]||'',margin+36,y+11);y+=15;
+        const detail=doc.splitTextToSize(editedDetail,contentW-40);
+        const detailLines=detail.slice(0,3);
+        doc.text(detailLines,margin+36,y+11);
+        y+=10+(detailLines.length-1)*4+5;
       });
       y+=4;checkPage(20);
       doc.setTextColor(...green);doc.setFontSize(9);doc.setFont('helvetica','bold');doc.text('TECHNICAL STRENGTHS',margin,y);y+=6;
