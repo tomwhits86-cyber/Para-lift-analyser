@@ -616,8 +616,13 @@ function renderResults(d,meta,athlete,sessionType,load,angle,plateCalibrated) {
   document.getElementById("rulesList").innerHTML=filteredRules.map(r=>{
     const sc=(r.status||"").toLowerCase();
     const bc=sc==="pass"?"pass":sc==="fail"?"fail":"warning";
-    return "<div class='rule-row'><div class='rule-status' style='flex-direction:column;align-items:center;'><select class='rule-dropdown "+bc+"' onchange=\"updateRuleBadge(this)\" data-rule=\"" + r.rule + "\" data-original='" + r.status + "'><option value='Pass' "+(r.status==='Pass'?'selected':'')+">Pass</option><option value='Warning' "+(r.status==='Warning'?'selected':'')+">Warning</option><option value='Fail' "+(r.status==='Fail'?'selected':'')+">Fail</option></select><div class='rule-ce'>CE</div></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail editable' contenteditable='true'>"+r.detail+"</div></div></div>";
+    return "<div class='rule-row'><div class='rule-status' style='flex-direction:column;align-items:center;'><select class='rule-dropdown "+bc+"' onchange=\"updateRuleBadge(this)\" data-rule=\""+r.rule+"\"><option value='Pass' "+(r.status==='Pass'?'selected':'')+">Pass</option><option value='Warning' "+(r.status==='Warning'?'selected':'')+">Warning</option><option value='Fail' "+(r.status==='Fail'?'selected':'')+">Fail</option></select><div class='rule-ce'>CE</div></div><div class='rule-content'><div class='rule-name'>"+r.rule+"</div><div class='rule-detail editable' contenteditable='true'>"+r.detail+"</div></div></div>";
   }).join("");
+  // Set data-original via JS after render
+  (d.rule_adherence||[]).forEach(function(rule) {
+    const sel = document.querySelector('#rulesList .rule-dropdown[data-rule="' + rule.rule + '"]');
+    if(sel) sel.setAttribute('data-original', rule.status);
+  });
   const strengths=d.strengths||[];
   document.getElementById("strengthsList").innerHTML=strengths.map(s=>"<div class='strength-item'><div class='strength-dot'></div><span class='editable' contenteditable='true'>"+s+"</span></div>").join("");
   const corrections=d.technical_corrections||[];
